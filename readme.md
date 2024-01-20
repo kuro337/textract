@@ -30,6 +30,8 @@ Build from Source using **CMake**
 brew install opencv openssl libomp folly tesseract
 ```
 
+<br/>
+
 #### Build
 
 <br/>
