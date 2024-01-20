@@ -27,14 +27,8 @@ Build from Source using **CMake**
 <br/>
 
 ```bash
-
-
 brew install opencv openssl libomp folly tesseract
-
-
 ```
-
-<br/>
 
 #### Build
 
