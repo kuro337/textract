@@ -6,6 +6,10 @@
 #include "opencv2/imgproc.hpp"
 #include <cstddef>
 #include <folly/AtomicUnorderedMap.h>
+#include <folly/init/Init.h>
+#include <folly/logging/Init.h>
+#include <folly/logging/Logger.h>
+#include <folly/logging/xlog.h>
 #include <fstream>
 #include <initializer_list>
 #include <iostream>
@@ -35,6 +39,20 @@ std::string computeSHA256(const std::string &filePath);
 
 void printSystemInfo();
 
+enum class ANSICode {
+  delimiter_star,
+  delimiter_dim,
+  green_bold,
+  green,
+  error,
+  success_tick,
+  failure_cross,
+  warning_brightyellow,
+  end,
+};
+
+constexpr const char *ANSI(ANSICode ansi);
+
 const std::string delimiter =
     "\x1b[90m***********************************************************";
 const std::string check_mark = "\x1b[32m✔\x1b[0m";
@@ -49,6 +67,8 @@ const std::string yellow = "\x1b[93m";
 std::vector<uchar> readBytesFromFile(const std::string &filename);
 
 void writeToNewFile(const std::string &content, const std::string &output_path);
+
+std::string getCurrentTimestamp();
 
 #pragma endregion
 
@@ -108,87 +128,167 @@ file names or paths differ.
 #pragma region imgstr_core      /* Core Class for Image Processing and Text Extraction */
 
 struct Image {
-  std::string path;
-  std::string name;
-  std::size_t byte_size;
-  std::string text_content;
-  std::string content_fuzzhash;
   std::string image_sha256;
+  std::string path;
+  std::size_t image_size;
+  std::string content_fuzzhash;
+  std::string text_content;
+  std::size_t text_size;
+  std::string time_processed;
+  std::string output_path;
+  std::string write_timestamp;
+  bool output_written = false;
+
+  Image(const std::string &img_hash, const std::string &path,
+        const std::string &text_content, size_t image_size = 0) {
+    this->image_sha256 = img_hash;
+    this->path = path;
+    this->text_content = text_content;
+    this->text_size = text_content.size();
+    this->image_size = image_size;
+    this->time_processed = getCurrentTimestamp();
+  }
+
+  std::string getName() const {
+    auto lastSlash = path.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+      return path.substr(lastSlash + 1);
+    }
+    return path;
+  }
 };
 
 class ImgProcessor {
 
 private:
   std::string dir;
-
   std::vector<std::string> files;
+  folly::AtomicUnorderedInsertMap<std::string, Image> cache;
 
-  folly::AtomicUnorderedInsertMap<std::string, std::string> cache;
+  std::optional<Image> processImageFile(const std::string &file) {
+    try {
+      std::vector<uchar> data = readBytesFromFile(file);
+      std::string img_hash = computeSHA256(data);
+      auto img_from_cache = getFromCacheIfExists(img_hash);
 
-  std::optional<std::string> getFromCacheIfExists(const std::string &img_sha) {
-    auto text_from_cache = cache.find(img_sha);
+      if (img_from_cache) {
 
-    if (text_from_cache != cache.end()) {
-      return text_from_cache->second;
+        std::cout << "processImageFile() got from cache hit" << '\n';
+
+        printCacheHit(file);
+        return img_from_cache;
+      } else {
+
+        std::string img_text = extractTextFromImageBytes(data, "eng");
+        Image image(img_hash, file, img_text, data.size());
+        Image img_cache = image;
+
+        cache.emplace(img_hash, std::move(img_cache));
+        return image;
+      }
+    } catch (const std::exception &e) {
+      printFileProcessingFailure(file, e.what());
+      return std::nullopt;
+    }
+  }
+
+  std::optional<Image> getFromCacheIfExists(const std::string &img_sha) {
+    auto img_from_cache = cache.find(img_sha);
+    if (img_from_cache != cache.end()) {
+      return img_from_cache->second;
     }
     return std::nullopt;
   }
 
   std::vector<std::string> processCurrentFiles() {
-    std::vector<std::string> processedText;
+
     if (files.empty()) {
       std::cout << "Files are empty" << std::endl;
       return {};
     }
+
+    std::vector<std::string> processedText;
+
     for (const auto &file : files) {
-
-      try {
-        auto data = readBytesFromFile(file);
-        std::string img_hash = computeSHA256(data);
-        auto text_from_cache = getFromCacheIfExists(img_hash);
-
-        if (text_from_cache) {
-          printCacheHit(file);
-          processedText.emplace_back(*text_from_cache);
-        } else {
-          std::string img_text = extractTextFromImageBytes(data, "eng");
-          cache.emplace(img_hash, img_text);
-          processedText.emplace_back(img_text);
-        }
-
-      } catch (const std::exception &e) {
-        std::cout << "Failed to Extract Text from Image file: " << file
-                  << ". Error: " << e.what() << '\n';
-      }
+      auto image = processImageFile(file);
+      if (image)
+        processedText.emplace_back(image.value().text_content);
     }
 
     return processedText;
   }
 
   void printCacheHit(const std::string &file) {
+
     std::cout << delimiter << '\n'
               << check_mark << green << "  Image Already Processed : " << end
               << file << '\n';
   }
 
+  void printOutputAlreadyWritten(const Image &img) {
+
+    std::cout << delimiter << '\n'
+              << ANSI(ANSICode::warning_brightyellow) << img.getName()
+              << " Already Processed and written to " << end << img.output_path
+              << " at " << img.write_timestamp << '\n';
+  }
+
+  void printFileProcessingFailure(const std::string &file,
+                                  const std::string &err_msg) {
+    std::cout << "Failed to Extract Text from Image file: " << file
+              << ". Error: " << err_msg << '\n';
+  }
+
+  void printFiles() {
+    for (const auto &file : files) {
+      std::cout << file << std::endl;
+    }
+  }
+
+  void printImagesInfo() {
+    std::cout << ANSI(ANSICode::delimiter_star) << '\n';
+    for (const auto &img_sha : cache) {
+      const Image &img = img_sha.second;
+      std::cout << ANSI(ANSICode::green_bold)
+                << "Image SHA256: " << ANSI(ANSICode::end) << img.image_sha256
+                << '\n';
+      std::cout << ANSI(ANSICode::green) << "Path: " << ANSI(ANSICode::end)
+                << img.path << '\n';
+      std::cout << ANSI(ANSICode::green)
+                << "Image Size: " << ANSI(ANSICode::end) << img.image_size
+                << " bytes\n";
+      std::cout << ANSI(ANSICode::green) << "Text Size: " << ANSI(ANSICode::end)
+                << img.text_size << " bytes\n";
+      std::cout << ANSI(ANSICode::green)
+                << "Processed Time: " << ANSI(ANSICode::end)
+                << img.time_processed << '\n';
+      std::cout << ANSI(ANSICode::green)
+                << "Output Path: " << ANSI(ANSICode::end) << img.output_path
+                << '\n';
+      std::cout << ANSI(ANSICode::green)
+                << "Output Written: " << ANSI(ANSICode::end)
+                << (img.output_written ? "Yes" : "No") << '\n';
+      std::cout << ANSI(ANSICode::green)
+                << "Write Timestamp: " << ANSI(ANSICode::end)
+                << img.write_timestamp << "\n\n";
+    }
+    std::cout << ANSI(ANSICode::delimiter_star) << '\n';
+  }
+
 public:
   ImgProcessor(size_t capacity = 1000)
       : files(),
-        cache(folly::AtomicUnorderedInsertMap<std::string, std::string>(
-            capacity)) {}
-
-  void setDir(const std::string dir_path) { dir = dir_path; }
+        cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)) {}
 
   void addFile(const std::string &file_path) { files.push_back(file_path); }
 
   void resetCache(size_t new_capacity) {
-    cache =
-        folly::AtomicUnorderedInsertMap<std::string, std::string>(new_capacity);
+    cache = folly::AtomicUnorderedInsertMap<std::string, Image>(new_capacity);
   }
 
   template <typename... FileNames>
   std::vector<std::string> processImages(FileNames... fileNames) {
-    addFiles({fileNames...}); // Use initializer_list to unpack the variadic
+    addFiles({fileNames...});
 
     return processCurrentFiles();
   }
@@ -205,38 +305,23 @@ public:
     }
   }
 
-  void printFiles() {
-    for (const auto &file : files) {
-      std::cout << file << std::endl;
+  std::optional<Image> getImage(const std::string &file_path,
+                                ISOLang lang = ISOLang::en) {
+    auto img = processImageFile(file_path);
+    if (img) {
+
+      return img.value();
     }
+    return std::nullopt;
   }
 
-  // pass file path , get Text
-  std::string getImageText(const std::string &file_path,
-                           ISOLang lang = ISOLang::en) {
-    try {
+  std::optional<std::string> getImageText(const std::string &file_path,
+                                          ISOLang lang = ISOLang::en) {
+    auto image = processImageFile(file_path);
+    if (image)
+      return image.value().text_content;
 
-      // if already processed - return else process image and add to cache
-      auto data = readBytesFromFile(file_path);
-      std::string img_hash = computeSHA256(data);
-      auto text_from_cache = getFromCacheIfExists(img_hash);
-
-      if (text_from_cache) {
-        printCacheHit(file_path);
-        return *text_from_cache;
-      } else {
-        std::string img_text =
-            extractTextFromImageBytes(data, isoToTesseractLang(lang));
-        cache.emplace(img_hash, img_text);
-
-        return img_text;
-      }
-    } catch (const std::exception &e) {
-      std::cout << "Failed to Extract Text from Image file: " << file_path
-                << ". Error: " << e.what() << '\n';
-    }
-
-    return nullptr;
+    return std::nullopt;
   }
 
   void writeTextToFile(const std::string &content,
@@ -249,6 +334,7 @@ public:
 
     std::ofstream outFile(output_path);
     if (!outFile) {
+
       std::cerr << "Error opening file: " << output_path << std::endl;
       return;
     }
@@ -264,10 +350,9 @@ public:
     std::string path_separator = "/";
 #endif
 
-    // create output dir if not exists
-    if (!output_dir.empty() && !std::filesystem::exists(output_dir)) {
+    if (!output_dir.empty() && !std::filesystem::exists(output_dir))
       std::filesystem::create_directories(output_dir);
-    }
+
     std::string outputFilePath = output_dir;
     if (!output_dir.empty() && output_dir.back() != path_separator.back()) {
       outputFilePath += path_separator;
@@ -279,8 +364,28 @@ public:
         input_file.substr(lastSlash + 1, lastDot - lastSlash - 1);
     outputFilePath += filename + ".txt";
 
-    std::string converted = getImageText(input_file, lang);
-    writeTextToFile(converted, outputFilePath);
+    std::cout << "output path is " << outputFilePath << '\n';
+
+    auto imageOpt = getImage(input_file, lang);
+
+    if (imageOpt) {
+
+      auto image = imageOpt.value();
+
+      if (!image.output_written) {
+        std::cout << "writing img first time" << '\n';
+
+        /* need to use a shared mutex for updates */
+
+        writeTextToFile(image.text_content, outputFilePath);
+        image.output_written = true;
+        image.output_path = outputFilePath;
+        image.write_timestamp = getCurrentTimestamp();
+        cache.emplace(image.image_sha256, std::move(image));
+      } else {
+        printOutputAlreadyWritten(image);
+      }
+    }
   }
 
   void convertImagesToTextFiles(const std::string &output_dir = "",
@@ -291,31 +396,19 @@ public:
     std::string path_separator = "/";
 #endif
 
-    // create output dir if not exists
-    if (!output_dir.empty() && !std::filesystem::exists(output_dir)) {
+    if (!output_dir.empty() && !std::filesystem::exists(output_dir))
       std::filesystem::create_directories(output_dir);
-    }
 
 #pragma omp parallel for
     for (const auto &file : files) {
-      //   int threads = omp_get_thread_num();
-      // cout << "Open MP thread num " << threads << endl;
 
-      std::string outputFilePath = output_dir;
-      if (!output_dir.empty() && output_dir.back() != path_separator.back()) {
-        outputFilePath += path_separator;
-      }
+      std::cout << "Procesing " << file << '\n';
 
-      std::size_t lastSlash = file.find_last_of("/\\");
-      std::size_t lastDot = file.find_last_of('.');
-      std::string filename =
-          file.substr(lastSlash + 1, lastDot - lastSlash - 1);
-      outputFilePath += filename + ".txt";
-
-      std::string converted = getImageText(file, lang);
-      writeTextToFile(converted, outputFilePath);
+      convertImageToTextFile(file, output_dir, lang);
     }
   }
+
+  void getResults() { printImagesInfo(); }
 };
 
 #pragma endregion
@@ -499,6 +592,16 @@ inline void writeToNewFile(const std::string &content,
   }
   outFile << content;
 }
+
+inline std::string getCurrentTimestamp() {
+  auto now = std::chrono::system_clock::now();
+  auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+  std::stringstream ss;
+  ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+  return ss.str();
+}
+
 #pragma endregion
 
 #pragma region SYSTEM_IMPL      /* Helpers for Host Environment */
@@ -519,17 +622,6 @@ inline void printSystemInfo() {
 #pragma endregion
 
 #pragma region LOGGING_IMPL
-enum class ANSICode {
-  delimiter_star,
-  delimiter_dim,
-  green_bold,
-  green,
-  error,
-  success_tick,
-  failure_cross,
-  warning_brightyellow,
-  end,
-};
 
 constexpr const char *ANSI(ANSICode ansi) {
   switch (ansi) {

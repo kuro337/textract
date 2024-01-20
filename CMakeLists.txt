@@ -64,6 +64,7 @@ endif()
 enable_testing()
 
 add_executable(ocr_test         tests/ocr_test.cc)
+add_executable(atomic_test      tests/atomic_test.cc)
 add_executable(similarity_test  tests/similarity_test.cc)
 add_executable(cache_benchmark  benchmarks/cache_benchmark.cc)
 
@@ -99,17 +100,28 @@ target_link_libraries(
   PUBLIC Folly::folly
 )
 
+target_link_libraries(
+  atomic_test 
+  PUBLIC GTest::gtest_main
+  PUBLIC ${CURL_LIBRARIES}
+  PUBLIC ${OpenCV_LIBS}
+  PUBLIC OpenSSL::Crypto
+  PUBLIC tesseract
+  PUBLIC Folly::folly
+)
 
 
 include(GoogleTest)
 gtest_discover_tests(ocr_test)
 gtest_discover_tests(similarity_test)
+gtest_discover_tests(atomic_test)
 
 
 if(OpenMP_CXX_FOUND)
     message(STATUS "Using OpenMP")
     target_link_libraries(ocr_test PUBLIC OpenMP::OpenMP_CXX)
     target_link_libraries(similarity_test PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(atomic_test PUBLIC OpenMP::OpenMP_CXX)
 else()
     message(STATUS "OpenMP not found")
 
