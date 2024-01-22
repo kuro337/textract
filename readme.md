@@ -1,8 +1,8 @@
 <br/>
 <br/>
 
-<div align="center">
-  <img alt="textract logo"  src="assets/logo.png">
+<div align="left">
+  <img alt="textract logo" height="75px" src="assets/logo.png">
 </div>
 
 <br/>
@@ -66,19 +66,19 @@ For Processing images and using _Tesseract OCR_ to extract text from Images.
 
 #### OpenSSL
 
-For generating _SHA256_ hashes from Image bytes and metadata.
+For generating **SHA256** hashes from Image bytes and metadata.
 
 <hr/>
 
 #### OpenMP
 
-To provide _parallelization_ on systems for processing.
+To provide **parallelization** on systems for processing.
 
 <hr/>
 
 #### Folly
 
-_textract_ uses Folly's **AtomicUnorderedInsertMap** for the Cache implementation to provide wait free parallel access to the Cache
+_textract_ uses Folly's **AtomicUnorderedInsertMap** for a fast Cache implementation to provide wait free parallel access to the Cache
 
 [Folly](https://github.com/facebook/folly)::[AtomicUnorderedInsertMap](https://github.com/facebook/folly/blob/main/folly/AtomicUnorderedMap.h)
 
@@ -95,10 +95,10 @@ Process Images and get their textual content
 <br/>
 
 ```cpp
-#include "imgtotext.h"
+#include <textract/textract>
 
 int main() {
-    imgstr::ImageTranslator app = imgstr::ImageTranslator();
+    imgstr::ImgProcessor app = imgstr::ImgProcessor();
 
     std::vector<std::string> results = app.processImages("cs101_notes.png","bio.jpeg");
 
@@ -116,17 +116,19 @@ Process all valid Image files from a directory and create text files
 <br/>
 
 ```cpp
-#include "imgtotext.h"
+#include <textract/textract>
 
 int main() {
 
-    /* Process 10000 images using parallelism */
+    /* Process 10000+ images with parallelism */
 
     imgstr::ImageTranslator app = imgstr::ImageTranslator(10000);
 
+    app.setCores(6);
 
-    app.processImagesWriteResults("/path/to/dir");
+    app.processImagesDir("/path/to/dir");
 
+    app.getResults();
 
     return 0;
 }
@@ -143,23 +145,23 @@ int main() {
 
 ```bash
 ============================================================================
-/textract/benchmarks/cache_benchmark.cc     relative  time/iter   iters/s
+/textract/benchmarks/cache_benchmark.cc       relative    time/iter  iters/s
 ============================================================================
-UnorderedMapMutexedSingleThreaded                         254.95ns     3.92M
-UnorderedMapMutexedMultiThreaded                            3.23us   309.19K
-UnorderedMapMutexedMaxThreads                               7.28us   137.27K
-ConcurrentHashMapSingleThreaded                           859.52ns     1.16M
-ConcurrentHashMapMultiThreaded                              3.41us   293.37K
-ConcurrentHashMapMaxThreads                                26.40us    37.87K
-ConcurrentHashMapComplexSingleThreaded                      1.43us   700.82K
-ConcurrentHashMapComplexMultiThreaded                       4.81us   207.69K
-ConcurrentHashMapComplexMaxThreads                         32.92us    30.38K
-AtomicUnorderedMapSingleThreaded                          159.61ns     6.27M
-AtomicUnorderedMapMultiThreaded                           403.47ns     2.48M
-AtomicUnorderedMapMaxThreads                                1.63us   611.78K
-AtomicUnorderedMapComplexSingleThreaded                   917.79ns     1.09M
-AtomicUnorderedMapComplexMultiThreaded                      2.44us   409.85K
-AtomicUnorderedMapComplexMaxThreads                        12.62us    79.25K
+UnorderedMapMutexedSingleThreaded                          60.70ns    16.48M
+UnorderedMapMutexedMultiThreaded                          771.14ns     1.30M
+UnorderedMapMutexedMaxThreads                               1.62us   618.92K
+ConcurrentHashMapSingleThreaded                           255.11ns     3.92M
+ConcurrentHashMapMultiThreaded                            978.99ns     1.02M
+ConcurrentHashMapMaxThreads                                 3.92us   254.82K
+ConcurrentHashMapComplexSingleThreaded                    394.03ns     2.54M
+ConcurrentHashMapComplexMultiThreaded                       1.68us   595.64K
+ConcurrentHashMapComplexMaxThreads                         13.05us    76.62K
+AtomicUnorderedMapSingleThreaded                           38.80ns    25.77M
+AtomicUnorderedMapMultiThreaded                            75.43ns    13.26M
+AtomicUnorderedMapMaxThreads                              451.00ns     2.22M
+AtomicUnorderedMapComplexSingleThreaded                   256.42ns     3.90M
+AtomicUnorderedMapComplexMultiThreaded                      1.68us   593.57K
+AtomicUnorderedMapComplexMaxThreads                         8.76us   114.17K
 ============================================================================
 
 ```

@@ -1,4 +1,4 @@
-#include "textract.h"
+#include <textract/textract>
 
 int main(int argc, char **argv) {
 
