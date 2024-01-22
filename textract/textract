@@ -700,8 +700,6 @@ inline size_t levenshteinScore(std::string a, std::string b) {
   }
 
   return dp[m][n];
-
-  return 1;
 }
 
 #pragma endregion
