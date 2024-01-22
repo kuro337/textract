@@ -50,6 +50,9 @@ make
 echo $(brew --prefix llvm)/bin/clang++
 echo $(brew --prefix llvm)/bin/clang
 
+# to build all releases
+./build_all.sh
+
 ```
 
 <br/>
@@ -144,6 +147,7 @@ int main() {
 <br/>
 
 ```bash
+
 ============================================================================
 /textract/benchmarks/cache_benchmark.cc       relative    time/iter  iters/s
 ============================================================================
