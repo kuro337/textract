@@ -2,32 +2,45 @@
 #ifndef TEXTRACT_H
 #define TEXTRACT_H
 
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc.hpp"
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
 #include <cstddef>
 #include <folly/AtomicUnorderedMap.h>
+#include <folly/SharedMutex.h>
 #include <folly/init/Init.h>
 #include <folly/logging/Init.h>
 #include <folly/logging/Logger.h>
 #include <folly/logging/xlog.h>
 #include <fstream>
+#include <functional>
 #include <initializer_list>
+#include <iomanip>
 #include <iostream>
+#include <leptonica/allheaders.h>
+#include <mutex>
 #include <omp.h>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <openssl/evp.h>
 #include <optional>
+#include <queue>
+#include <sstream>
 #include <string>
 #include <tesseract/baseapi.h>
+#include <thread>
+#include <unordered_set>
 #include <vector>
 
 namespace imgstr {
 
-#pragma region TEXT_SIMILARITY  /* Text Similarity Declarations */
+#pragma region TEXT_SIMILARITY            /* Text Similarity Declarations */
 
 size_t levenshteinScore(std::string a, std::string b);
 
 #pragma endregion
 
-#pragma region CRYPTOGRAPHY     /* Cryptography Declarations */
+#pragma region CRYPTOGRAPHY               /* Cryptography Declarations */
 
 std::string computeSHA256(const std::vector<uchar> &data);
 
@@ -35,48 +48,44 @@ std::string computeSHA256(const std::string &filePath);
 
 #pragma endregion
 
-#pragma region SYSTEM_UTILS     /* System Environment helpers */
+#pragma region SYSTEM_UTILS               /* System Environment helpers */
 
-void printSystemInfo();
-
-enum class ANSICode {
-  delimiter_star,
-  delimiter_dim,
-  green_bold,
-  green,
-  error,
-  success_tick,
-  failure_cross,
-  warning_brightyellow,
-  end,
-};
-
-constexpr const char *ANSI(ANSICode ansi);
-
-const std::string delimiter =
-    "\x1b[90m***********************************************************";
-const std::string check_mark = "\x1b[32m✔\x1b[0m";
-const std::string green = "\x1b[92m";
-const std::string end = "\x1b[0m";
-const std::string yellow = "\x1b[93m";
-
-#pragma endregion
-
-#pragma region FILE_IO         /* File IO helpers */
-
-std::vector<uchar> readBytesFromFile(const std::string &filename);
-
-void writeToNewFile(const std::string &content, const std::string &output_path);
-
-std::string getCurrentTimestamp();
-
-#pragma endregion
-
-#pragma region OPENCV_UTILS    /* OpenCV Declarations */
+enum class CORES { single, half, max };
 
 enum class ISOLang { en, es, fr, hi, zh, de };
 
-inline std::string isoToTesseractLang(ISOLang isoLang) {
+std::chrono::time_point<std::chrono::high_resolution_clock> getStartTime();
+
+double getDuration(
+    const std::chrono::time_point<std::chrono::high_resolution_clock> &start);
+
+void printSystemInfo();
+
+#define BOLD "\x1b[1m"
+#define ITALIC "\x1b[3m"
+#define UNDERLINE "\x1b[4mT"
+#define BRIGHT_WHITE "\x1b[97m"
+#define LIGHT_GREY "\x1b[37m"
+#define GREEN "\x1b[92m"
+#define BOLD_WHITE "\x1b[1m"
+#define CYAN "\x1b[96m"
+#define BLUE "\x1b[94m"
+#define GREEN_BOLD "\x1b[1;32m"
+#define ERROR "\x1b[31m"
+#define SUCCESS_TICK "\x1b[32m✔\x1b[0m"
+#define FAILURE_CROSS "\x1b[31m✖\x1b[0m"
+#define WARNING "\x1b[93m"
+#define WARNING_BOLD "\x1b[1;33m"
+#define END "\x1b[0m"
+#define DELIMITER_STAR                                                         \
+  "\x1b[90m***********************************************************\x1b[0m"
+#define DELIMITER_DIM                                                          \
+  "\x1b[90m***********************************************************\x1b[0m"
+#define DELIMITER_ITEM                                                         \
+  "--------------------------------------------------------------------------" \
+  "----------"
+
+inline constexpr std::string isoToTesseractLang(ISOLang isoLang) {
   switch (isoLang) {
   case ISOLang::en:
     return "eng";
@@ -95,6 +104,28 @@ inline std::string isoToTesseractLang(ISOLang isoLang) {
   }
 }
 
+#pragma endregion
+
+#pragma region FILE_IO                    /* File IO Declarations */
+
+std::vector<uchar> readBytesFromFile(const std::string &filename);
+
+void writeToNewFile(const std::string &content, const std::string &output_path);
+
+bool isImageFile(const std::filesystem::path &path);
+
+std::string getCurrentTimestamp();
+
+#pragma endregion
+
+#pragma region OPENCV_UTILS               /* OpenCV Declarations */
+
+std::string getTextOCR(const std::vector<uchar> &file_content,
+                       const std::string &lang);
+
+std::string getTextOCROpenCV(const std::vector<uchar> &file_content,
+                             const std::string &lang);
+
 std::string extractTextFromImageBytes(const std::vector<uchar> &file_content,
                                       const std::string &lang);
 
@@ -104,19 +135,145 @@ std::string extractTextFromImageFile(const std::string &file_path,
 std::string extractTextFromImageFile(const std::string &file_path,
                                      ISOLang lang);
 
+void cleanupOpenMPTesserat();
+
+#pragma endregion
+
+#pragma region ASYNC_LOGGER      /* Non Blocking Asynchronous Logger with ANSI Escaping */
+
+class AsyncLogger {
+public:
+  AsyncLogger() : exit_flag(false) {
+    worker_thread = std::thread(&AsyncLogger::processEntries, this);
+  }
+
+  ~AsyncLogger() {
+    exit_flag.store(true);
+    cv.notify_one();
+    worker_thread.join();
+  }
+
+  class LogStream {
+  public:
+    LogStream(AsyncLogger &logger, bool immediateFlush = true)
+        : logger(logger), immediateFlush(immediateFlush) {}
+
+    ~LogStream() { logger.log(stream.str()); }
+
+    template <typename T> LogStream &operator<<(const T &msg) {
+      stream << msg;
+      return *this;
+    }
+
+    void flush() {
+      if (!immediateFlush) {
+        logger.log(stream.str());
+        stream.str("");
+        stream.clear();
+      }
+    }
+
+  private:
+    AsyncLogger &logger;
+    std::ostringstream stream;
+    bool immediateFlush;
+  };
+
+  LogStream log() { return LogStream(*this); }
+  LogStream stream() { return LogStream(*this, false); }
+
+private:
+  std::thread worker_thread;
+  std::mutex queue_mutex;
+  std::condition_variable cv;
+  std::queue<std::string> log_queue;
+  std::atomic<bool> exit_flag;
+
+  void log(const std::string &message) {
+    std::lock_guard<std::mutex> lock(queue_mutex);
+    log_queue.push(message);
+    cv.notify_one();
+  }
+
+  void processEntries() {
+    std::unique_lock<std::mutex> lock(queue_mutex, std::defer_lock);
+    while (true) {
+      lock.lock();
+      cv.wait(lock, [this] { return !log_queue.empty() || exit_flag.load(); });
+      while (!log_queue.empty()) {
+        std::cout << log_queue.front() << std::endl;
+        log_queue.pop();
+      }
+      if (exit_flag.load())
+        break;
+      lock.unlock();
+    }
+  }
+};
+
+#pragma endregion
+
+#pragma region TESSERACT_OPENMP          /* Tesseract Implementation for Thread Local Tesseracts'  */
+
+static std::atomic<int> TesseractThreadCount(0);
+
+struct TesseractOCR {
+  tesseract::TessBaseAPI *ocrPtr;
+
+  TesseractOCR() : ocrPtr(nullptr) {
+    TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  void init(const std::string &lang = "eng") {
+    if (!ocrPtr) {
+      ocrPtr = new tesseract::TessBaseAPI();
+      if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
+        delete ocrPtr;
+        ocrPtr = nullptr;
+        throw std::runtime_error("Could not initialize tesseract.");
+      }
+    }
+  }
+
+  ~TesseractOCR() {
+    if (ocrPtr) {
+      ocrPtr->Clear();
+      ocrPtr->End();
+      delete ocrPtr;
+    }
+  }
+
+  tesseract::TessBaseAPI *operator->() const { return ocrPtr; }
+};
+
+static TesseractOCR thread_local_tesserat;
+
+#pragma omp threadprivate(thread_local_tesserat)
+
+inline void cleanupOpenMPTesserat() {
+  int num_cores = omp_get_num_procs();
+  omp_set_num_threads(num_cores);
+#pragma omp parallel
+  {
+    if (thread_local_tesserat.ocrPtr) {
+      thread_local_tesserat.~TesseractOCR();
+      thread_local_tesserat.ocrPtr = nullptr;
+    }
+  }
+}
+
 #pragma endregion
 
 /*
 
 ImgProcessor : Core header class
 
-Provides an efficient, high performance implementation of Text
-Extraction from Images.
+Provides an efficient, high performance implementation
+of Text Extraction from Images.
 
 Supports Parallelized Image Processing and maintains an in-memory cache.
 
-Uses an Atomic Unordered Map for Safe Wait-Free parallel access to ensure images
-are not processed twice
+Uses an Atomic Unordered Map for Safe Wait-Free parallel access
 
 Cache retrieval logic is determined by the SHA256 hash of the Image bytes
 
@@ -127,6 +284,12 @@ file names or paths differ.
 
 #pragma region imgstr_core      /* Core Class for Image Processing and Text Extraction */
 
+struct WriteMetadata {
+  std::string output_path;
+  std::string write_timestamp;
+  bool output_written = false;
+};
+
 struct Image {
   std::string image_sha256;
   std::string path;
@@ -135,9 +298,8 @@ struct Image {
   std::string text_content;
   std::size_t text_size;
   std::string time_processed;
-  std::string output_path;
-  std::string write_timestamp;
-  bool output_written = false;
+  mutable WriteMetadata write_info;
+  mutable std::unique_ptr<folly::SharedMutex> mutex;
 
   Image(const std::string &img_hash, const std::string &path,
         const std::string &text_content, size_t image_size = 0) {
@@ -147,6 +309,27 @@ struct Image {
     this->text_size = text_content.size();
     this->image_size = image_size;
     this->time_processed = getCurrentTimestamp();
+    this->mutex = nullptr;
+  }
+
+  void updateWriteInfo(const std::string &output_path,
+                       const std::string &write_timestamp,
+                       bool output_written) const {
+    if (!mutex) {
+      mutex = std::make_unique<folly::SharedMutex>();
+    }
+    std::unique_lock<folly::SharedMutex> writerLock(*mutex);
+    write_info.output_path = output_path;
+    write_info.write_timestamp = write_timestamp;
+    write_info.output_written = output_written;
+  }
+
+  WriteMetadata readWriteInfoSafe() {
+    if (!mutex) {
+      return write_info;
+    }
+    std::shared_lock<folly::SharedMutex> readerLock(*mutex);
+    return write_info;
   }
 
   std::string getName() const {
@@ -162,29 +345,34 @@ class ImgProcessor {
 
 private:
   std::string dir;
-  std::vector<std::string> files;
+  std::vector<std::string> queued;
+  std::unordered_set<std::string> files;
+  std::unordered_set<std::string> processed;
   folly::AtomicUnorderedInsertMap<std::string, Image> cache;
+  std::unique_ptr<AsyncLogger> logger;
 
-  std::optional<Image> processImageFile(const std::string &file) {
+  std::optional<std::reference_wrapper<const Image>>
+  processImageFile(const std::string &file) {
     try {
       std::vector<uchar> data = readBytesFromFile(file);
       std::string img_hash = computeSHA256(data);
-      auto img_from_cache = getFromCacheIfExists(img_hash);
 
+      auto img_from_cache = getFromCacheIfExists(img_hash);
       if (img_from_cache) {
 
-        std::cout << "processImageFile() got from cache hit" << '\n';
-
         printCacheHit(file);
-        return img_from_cache;
+        return std::cref(img_from_cache->get());
       } else {
 
-        std::string img_text = extractTextFromImageBytes(data, "eng");
+        std::string img_text = getTextOCR(data, "eng");
         Image image(img_hash, file, img_text, data.size());
-        Image img_cache = image;
 
-        cache.emplace(img_hash, std::move(img_cache));
-        return image;
+        auto &cachedImage =
+            cache.emplace(img_hash, std::move(image)).first->second;
+
+        processed.insert(file);
+
+        return std::cref(cachedImage);
       }
     } catch (const std::exception &e) {
       printFileProcessingFailure(file, e.what());
@@ -192,18 +380,18 @@ private:
     }
   }
 
-  std::optional<Image> getFromCacheIfExists(const std::string &img_sha) {
+  std::optional<std::reference_wrapper<const Image>>
+  getFromCacheIfExists(const std::string &img_sha) {
     auto img_from_cache = cache.find(img_sha);
     if (img_from_cache != cache.end()) {
-      return img_from_cache->second;
+      return std::cref(img_from_cache->second);
     }
     return std::nullopt;
   }
 
   std::vector<std::string> processCurrentFiles() {
-
     if (files.empty()) {
-      std::cout << "Files are empty" << std::endl;
+      logger->log() << "Files are empty";
       return {};
     }
 
@@ -212,114 +400,174 @@ private:
     for (const auto &file : files) {
       auto image = processImageFile(file);
       if (image)
-        processedText.emplace_back(image.value().text_content);
+        processedText.emplace_back(image.value().get().text_content);
     }
 
     return processedText;
   }
 
   void printCacheHit(const std::string &file) {
-
-    std::cout << delimiter << '\n'
-              << check_mark << green << "  Image Already Processed : " << end
-              << file << '\n';
-  }
-
-  void printOutputAlreadyWritten(const Image &img) {
-
-    std::cout << delimiter << '\n'
-              << ANSI(ANSICode::warning_brightyellow) << img.getName()
-              << " Already Processed and written to " << end << img.output_path
-              << " at " << img.write_timestamp << '\n';
+    logger->log() << '\n'
+                  << SUCCESS_TICK << GREEN << "  Cache Hit : " << END << file
+                  << '\n';
   }
 
   void printFileProcessingFailure(const std::string &file,
                                   const std::string &err_msg) {
-    std::cout << "Failed to Extract Text from Image file: " << file
-              << ". Error: " << err_msg << '\n';
+    logger->log() << "Failed to Extract Text from Image file: " << file
+                  << ". Error: " << err_msg << '\n';
   }
 
-  void printFiles() {
-    for (const auto &file : files) {
-      std::cout << file << std::endl;
-    }
+  void printInputFileAlreadyProcessed(const std::string &file) {
+    logger->log() << DELIMITER_STAR << '\n'
+                  << WARNING << "File at path : " << END << file
+                  << "has already been processed to text" << '\n';
+  }
+
+  void printOutputAlreadyWritten(const Image &image) {
+    logger->log() << DELIMITER_STAR << '\n'
+                  << WARNING << image.getName()
+                  << " Already Processed and written to " << END
+                  << image.write_info.output_path << " at "
+                  << image.write_info.write_timestamp << '\n';
+  }
+
+  void printProcessingFile(const std::string &file) {
+    logger->log() << BOLD_WHITE << "Processing " << END << BRIGHT_WHITE << file
+                  << END << '\n';
+  }
+
+  void printProcessingDuration(double duration_ms) {
+
+    logger->log() << DELIMITER_STAR << '\n'
+                  << BOLD_WHITE << queued.size() << END
+                  << " Files Processed and Converted in " << BRIGHT_WHITE
+                  << duration_ms << " seconds\n"
+                  << END << DELIMITER_STAR << "\n";
   }
 
   void printImagesInfo() {
-    std::cout << ANSI(ANSICode::delimiter_star) << '\n';
+    const int width = 20;
+
+    auto logstream = logger->stream();
+
+    logstream << DELIMITER_STAR << '\n'
+              << BOLD_WHITE << "textract Processing Results\n"
+              << END << DELIMITER_STAR << '\n';
+
     for (const auto &img_sha : cache) {
       const Image &img = img_sha.second;
-      std::cout << ANSI(ANSICode::green_bold)
-                << "Image SHA256: " << ANSI(ANSICode::end) << img.image_sha256
-                << '\n';
-      std::cout << ANSI(ANSICode::green) << "Path: " << ANSI(ANSICode::end)
-                << img.path << '\n';
-      std::cout << ANSI(ANSICode::green)
-                << "Image Size: " << ANSI(ANSICode::end) << img.image_size
-                << " bytes\n";
-      std::cout << ANSI(ANSICode::green) << "Text Size: " << ANSI(ANSICode::end)
-                << img.text_size << " bytes\n";
-      std::cout << ANSI(ANSICode::green)
-                << "Processed Time: " << ANSI(ANSICode::end)
-                << img.time_processed << '\n';
-      std::cout << ANSI(ANSICode::green)
-                << "Output Path: " << ANSI(ANSICode::end) << img.output_path
-                << '\n';
-      std::cout << ANSI(ANSICode::green)
-                << "Output Written: " << ANSI(ANSICode::end)
-                << (img.output_written ? "Yes" : "No") << '\n';
-      std::cout << ANSI(ANSICode::green)
-                << "Write Timestamp: " << ANSI(ANSICode::end)
-                << img.write_timestamp << "\n\n";
+
+      logstream << GREEN_BOLD << std::left << std::setw(width)
+                << "SHA256: " << END << img.image_sha256 << '\n'
+                << BLUE << std::left << std::setw(width) << "Path: " << END
+                << img.path << '\n'
+                << BLUE << std::left << std::setw(width)
+                << "Image Size: " << END << img.image_size << " bytes\n"
+                << BLUE << std::left << std::setw(width) << "Text Size: " << END
+                << img.text_size << " bytes\n"
+                << BLUE << std::left << std::setw(width)
+                << "Processed Time: " << END << img.time_processed << '\n'
+                << BLUE << std::left << std::setw(width)
+                << "Output Path: " << END << img.write_info.output_path << '\n'
+                << BLUE << std::left << std::setw(width)
+                << "Output Written: " << END
+                << (img.write_info.output_written ? "Yes" : "No") << '\n'
+                << BLUE << std::left << std::setw(width)
+                << "Write Timestamp: " << END << img.write_info.write_timestamp
+                << '\n'
+                << DELIMITER_ITEM << '\n';
     }
-    std::cout << ANSI(ANSICode::delimiter_star) << '\n';
+
+    logstream.flush();
   }
 
 public:
   ImgProcessor(size_t capacity = 1000)
-      : files(),
-        cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)) {}
+      : logger(std::make_unique<AsyncLogger>()), files(),
+        cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)) {
+    logger->log() << "Processor Initialized";
+  }
 
-  void addFile(const std::string &file_path) { files.push_back(file_path); }
+  ~ImgProcessor() {
+
+    logger->log() << LIGHT_GREY << "Destructor called - freeing "
+                  << BRIGHT_WHITE
+                  << imgstr::TesseractThreadCount.load(
+                         std::memory_order_relaxed)
+                  << END << " Tesseracts\n"
+                  << END;
+
+    cleanupOpenMPTesserat();
+  }
+
+  void addFile(const std::string &file_path) {
+    if (files.find(file_path) != files.end()) {
+      files.insert(file_path);
+      queued.emplace_back(file_path);
+    }
+  }
 
   void resetCache(size_t new_capacity) {
     cache = folly::AtomicUnorderedInsertMap<std::string, Image>(new_capacity);
   }
 
+  void processImagesDir(const std::string &directory, bool write_output = false,
+                        const std::string &output_path = "") {
+    for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+      if (isImageFile(entry.path())) {
+
+        auto file_path = entry.path().string();
+
+        if (files.find(file_path) == files.end()) {
+          files.insert(file_path);
+          queued.emplace_back(file_path);
+        }
+      }
+    }
+
+    if (write_output) {
+      convertImagesToTextFiles(output_path);
+    }
+  }
+
   template <typename... FileNames>
   std::vector<std::string> processImages(FileNames... fileNames) {
     addFiles({fileNames...});
-
     return processCurrentFiles();
   }
 
   void addFiles(std::initializer_list<std::string> fileList) {
     for (const auto &file : fileList) {
-      this->files.push_back(file);
+
+      if (files.find(file) == files.end()) {
+        files.insert(file);
+        queued.emplace_back(file);
+      }
     }
   }
 
   void addFiles(const std::vector<std::string> &fileList) {
     for (const auto &file : fileList) {
-      files.push_back(file);
+
+      if (files.find(file) == files.end()) {
+        files.insert(file);
+        queued.emplace_back(file);
+      }
     }
   }
 
-  std::optional<Image> getImage(const std::string &file_path,
-                                ISOLang lang = ISOLang::en) {
-    auto img = processImageFile(file_path);
-    if (img) {
-
-      return img.value();
-    }
-    return std::nullopt;
+  std::optional<std::reference_wrapper<const Image>>
+  getImageOrProcess(const std::string &file_path, ISOLang lang = ISOLang::en) {
+    return processImageFile(file_path);
   }
 
   std::optional<std::string> getImageText(const std::string &file_path,
                                           ISOLang lang = ISOLang::en) {
     auto image = processImageFile(file_path);
+
     if (image)
-      return image.value().text_content;
+      return image.value().get().text_content;
 
     return std::nullopt;
   }
@@ -328,7 +576,11 @@ public:
                        const std::string &output_path) {
 
     if (std::filesystem::exists(output_path)) {
-      std::cerr << "Error: File already exists - " << output_path << std::endl;
+      logger->log() << WARNING_BOLD << "WARNING:  " << END << WARNING
+                    << "File already exists - " << END << BOLD_WHITE
+                    << output_path << END
+                    << "    Are you sure you want to overwrite the file?"
+                    << '\n';
       return;
     }
 
@@ -353,6 +605,8 @@ public:
     if (!output_dir.empty() && !std::filesystem::exists(output_dir))
       std::filesystem::create_directories(output_dir);
 
+    printProcessingFile(input_file);
+
     std::string outputFilePath = output_dir;
     if (!output_dir.empty() && output_dir.back() != path_separator.back()) {
       outputFilePath += path_separator;
@@ -364,24 +618,15 @@ public:
         input_file.substr(lastSlash + 1, lastDot - lastSlash - 1);
     outputFilePath += filename + ".txt";
 
-    std::cout << "output path is " << outputFilePath << '\n';
-
-    auto imageOpt = getImage(input_file, lang);
+    auto imageOpt = getImageOrProcess(input_file, lang);
 
     if (imageOpt) {
+      const Image &image = imageOpt.value().get();
 
-      auto image = imageOpt.value();
-
-      if (!image.output_written) {
-        std::cout << "writing img first time" << '\n';
-
-        /* need to use a shared mutex for updates */
-
+      if (!image.write_info.output_written) {
         writeTextToFile(image.text_content, outputFilePath);
-        image.output_written = true;
-        image.output_path = outputFilePath;
-        image.write_timestamp = getCurrentTimestamp();
-        cache.emplace(image.image_sha256, std::move(image));
+
+        image.updateWriteInfo(outputFilePath, getCurrentTimestamp(), true);
       } else {
         printOutputAlreadyWritten(image);
       }
@@ -399,21 +644,35 @@ public:
     if (!output_dir.empty() && !std::filesystem::exists(output_dir))
       std::filesystem::create_directories(output_dir);
 
+    auto start = getStartTime();
+
+    if (queued.empty()) {
+      logger->log() << BOLD_WHITE << "All files have already been processed."
+                    << END;
+      return;
+    }
+
 #pragma omp parallel for
-    for (const auto &file : files) {
-
-      std::cout << "Procesing " << file << '\n';
-
+    for (const auto &file : queued) {
       convertImageToTextFile(file, output_dir, lang);
     }
+
+    printProcessingDuration(getDuration(start));
+    queued.clear();
   }
 
   void getResults() { printImagesInfo(); }
+
+  void printFiles() {
+    for (const auto &file : files) {
+      logger->log() << file;
+    }
+  }
 };
 
 #pragma endregion
 
-/* Declaration Implementations */
+/* Implementations */
 
 #pragma region TEXT_SIMILARITY_IMPL
 
@@ -447,12 +706,7 @@ inline size_t levenshteinScore(std::string a, std::string b) {
 
 #pragma endregion
 
-#pragma region CRYPTOGRAPHY_IMPL
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <openssl/evp.h>
-#include <sstream>
+#pragma region CRYPTOGRAPHY_IMPL           /*    OpenSSL4 Cryptography Implementations    */
 
 inline std::string computeSHA256(const std::vector<uchar> &data) {
   EVP_MD_CTX *mdContext = EVP_MD_CTX_new();
@@ -480,11 +734,11 @@ inline std::string computeSHA256(const std::vector<uchar> &data) {
 
   EVP_MD_CTX_free(mdContext);
 
-  std::stringstream ss;
+  std::stringstream sha256;
   for (unsigned int i = 0; i < lengthOfHash; ++i) {
-    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    sha256 << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
-  return ss.str();
+  return sha256.str();
 }
 
 inline std::string computeSHA256(const std::string &filePath) {
@@ -492,14 +746,72 @@ inline std::string computeSHA256(const std::string &filePath) {
   if (!file) {
     throw std::runtime_error("Could not open file: " + filePath);
   }
-
   std::vector<uchar> data(std::istreambuf_iterator<char>(file), {});
-
   return computeSHA256(data);
 }
+
 #pragma endregion
 
-#pragma region OPENCV_IMPL
+#pragma region TESSERACT_OPENMP
+
+#pragma region OPENCV_IMPL                /* OpenCV Image Processing Implementations */
+
+/* valid image extensions */
+static const std::unordered_set<std::string> validExtensions = {
+    ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif"};
+
+inline bool isImageFile(const std::filesystem::path &path) {
+  return validExtensions.find(path.extension().string()) !=
+         validExtensions.end();
+}
+
+inline std::string getTextOCR(const std::vector<uchar> &file_content,
+                              const std::string &lang) {
+
+  /* Leptonica reads 40% or more faster than OpenCV */
+
+  if (!thread_local_tesserat.ocrPtr) {
+    std::cout << "New Tesserat instance created\n" << std::endl;
+    thread_local_tesserat.init(lang);
+  }
+  Pix *image =
+      pixReadMem(reinterpret_cast<const l_uint8 *>(file_content.data()),
+                 file_content.size());
+  if (!image)
+    throw std::runtime_error("Failed to load image from memory buffer");
+
+  thread_local_tesserat->SetImage(image);
+  std::string outText(thread_local_tesserat->GetUTF8Text());
+
+  pixDestroy(&image);
+
+  return outText;
+};
+
+inline std::string getTextOCROpenCV(const std::vector<uchar> &file_content,
+                                    const std::string &lang) {
+
+  if (!thread_local_tesserat.ocrPtr) {
+    std::cout << "New Tesserat instance created\n" << std::endl;
+    thread_local_tesserat.init(lang);
+  }
+
+  cv::Mat img = cv::imdecode(file_content, cv::IMREAD_COLOR);
+  if (img.empty()) {
+    throw std::runtime_error("Failed to load image from buffer");
+  }
+
+  cv::Mat gray;
+  cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+  cv::threshold(gray, gray, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+  thread_local_tesserat->SetImage(gray.data, gray.cols, gray.rows, 1,
+                                  gray.step);
+  std::string outText(thread_local_tesserat->GetUTF8Text());
+
+  return outText;
+};
+
 inline std::string
 extractTextFromImageBytes(const std::vector<uchar> &file_content,
                           const std::string &lang = "eng") {
@@ -536,17 +848,13 @@ inline std::string extractTextFromImageFile(const std::string &file_path,
   cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
   cv::threshold(gray, gray, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
-  // Init Tesseract OCR engine
-  // brew install tesseract-lang for all langs
   tesseract::TessBaseAPI ocr;
   if (ocr.Init(nullptr, lang.c_str()) != 0) {
     throw std::runtime_error("Could not initialize tesseract.");
   }
 
-  // load image to Tesseract
   ocr.SetImage(gray.data, gray.cols, gray.rows, 1, gray.step);
 
-  // run OCR
   std::string outText(ocr.GetUTF8Text());
 
   ocr.End();
@@ -559,10 +867,13 @@ inline std::string extractTextFromImage(const std::string &file_path,
   std::string langCode = isoToTesseractLang(lang);
   return extractTextFromImageFile(file_path, langCode);
 }
+
+/* brew install tesseract-lang for all langs */
+
 #pragma endregion
 
-#pragma region FILE_IO_IMPL
-//  Read File : pass file path , get string
+#pragma region FILE_IO_IMPL               /* STL File I/O Implementations */
+
 inline std::vector<uchar> readBytesFromFile(const std::string &filename) {
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
   if (!file) {
@@ -577,7 +888,6 @@ inline std::vector<uchar> readBytesFromFile(const std::string &filename) {
   return buffer;
 }
 
-// Write Content : write content to provided Path if it is a new file
 inline void writeToNewFile(const std::string &content,
                            const std::string &output_path) {
 
@@ -604,7 +914,18 @@ inline std::string getCurrentTimestamp() {
 
 #pragma endregion
 
-#pragma region SYSTEM_IMPL      /* Helpers for Host Environment */
+#pragma region SYSTEM_IMPL                /* System Environment Util Implementations */
+
+using high_res_clock = std::chrono::high_resolution_clock;
+using time_point = std::chrono::time_point<high_res_clock>;
+
+inline time_point getStartTime() { return high_res_clock::now(); }
+
+inline double getDuration(const time_point &startTime) {
+  auto endTime = high_res_clock::now();
+  return std::chrono::duration<double>(endTime - startTime).count();
+}
+
 inline void printSystemInfo() {
 #ifdef __clang__
   std::cout << "Clang version: " << __clang_version__ << std::endl;
@@ -619,36 +940,6 @@ inline void printSystemInfo() {
 #endif
 };
 
-#pragma endregion
-
-#pragma region LOGGING_IMPL
-
-constexpr const char *ANSI(ANSICode ansi) {
-  switch (ansi) {
-  case ANSICode::delimiter_dim:
-    return "\x1b[90m***********************\x1b[0m";
-  case ANSICode::delimiter_star:
-    return "\x1b[90m***********************************************************"
-           "********************\x1b[0m";
-  case ANSICode::green:
-    return "\x1b[92m";
-  case ANSICode::green_bold:
-    return "\x1b[1;32m";
-  case ANSICode::error:
-    return "\x1b[31m";
-  case ANSICode::success_tick:
-    return "\x1b[32m✔\x1b[0m";
-  case ANSICode::failure_cross:
-    return "\x1b[31m✖\x1b[0m";
-  case ANSICode::warning_brightyellow:
-    return "\x1b[93m";
-
-  case ANSICode::end:
-    return "\x1b[0m";
-  default:
-    return "";
-  }
-}
 #pragma endregion
 
 } // namespace imgstr

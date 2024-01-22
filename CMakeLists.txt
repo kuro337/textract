@@ -23,6 +23,9 @@ find_package(CURL REQUIRED)
 include_directories("/opt/homebrew/opt/tesseract/include") 
 link_directories("/opt/homebrew/opt/tesseract/lib")
 
+include_directories("/opt/homebrew/opt/leptonica/include") 
+link_directories("/opt/homebrew/opt/leptonica/lib")
+
 # gtest
 include(FetchContent)
 FetchContent_Declare(
@@ -46,6 +49,7 @@ target_link_libraries(main
   PUBLIC Folly::folly
   PUBLIC OpenSSL::Crypto
   PUBLIC tesseract
+  PUBLIC leptonica
   PUBLIC ${OpenCV_LIBS}
   PUBLIC ${CURL_LIBRARIES}
 )
@@ -66,6 +70,7 @@ enable_testing()
 add_executable(ocr_test         tests/ocr_test.cc)
 add_executable(atomic_test      tests/atomic_test.cc)
 add_executable(similarity_test  tests/similarity_test.cc)
+add_executable(threadlocal_test tests/threadlocal_test.cc)
 add_executable(cache_benchmark  benchmarks/cache_benchmark.cc)
 
 target_link_libraries(
@@ -75,6 +80,7 @@ target_link_libraries(
   PUBLIC ${OpenCV_LIBS}
   PUBLIC OpenSSL::Crypto
   PUBLIC tesseract
+  PUBLIC leptonica
   PUBLIC Folly::folly
   PUBLIC Folly::follybenchmark
 )
@@ -87,8 +93,21 @@ target_link_libraries(
   PUBLIC ${OpenCV_LIBS}
   PUBLIC OpenSSL::Crypto
   PUBLIC tesseract
+  PUBLIC leptonica
   PUBLIC Folly::folly
 )
+
+target_link_libraries(
+  threadlocal_test
+  PUBLIC GTest::gtest_main
+  PUBLIC ${CURL_LIBRARIES}
+  PUBLIC ${OpenCV_LIBS}
+  PUBLIC OpenSSL::Crypto
+  PUBLIC tesseract
+  PUBLIC leptonica
+  PUBLIC Folly::folly
+)
+
 
 target_link_libraries(
   similarity_test
@@ -97,6 +116,7 @@ target_link_libraries(
   PUBLIC ${OpenCV_LIBS}
   PUBLIC OpenSSL::Crypto
   PUBLIC tesseract
+  PUBLIC leptonica
   PUBLIC Folly::folly
 )
 
@@ -107,6 +127,7 @@ target_link_libraries(
   PUBLIC ${OpenCV_LIBS}
   PUBLIC OpenSSL::Crypto
   PUBLIC tesseract
+  PUBLIC leptonica
   PUBLIC Folly::folly
 )
 
@@ -121,7 +142,8 @@ if(OpenMP_CXX_FOUND)
     message(STATUS "Using OpenMP")
     target_link_libraries(ocr_test PUBLIC OpenMP::OpenMP_CXX)
     target_link_libraries(similarity_test PUBLIC OpenMP::OpenMP_CXX)
-    target_link_libraries(atomic_test PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(similarity_test PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(threadlocal_test PUBLIC OpenMP::OpenMP_CXX)
 else()
     message(STATUS "OpenMP not found")
 
