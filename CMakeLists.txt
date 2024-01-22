@@ -9,23 +9,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-
-
 find_package(OpenCV REQUIRED)
-
 find_package(OpenSSL REQUIRED)
-
 find_package(OpenMP) 
-
 find_package(Folly CONFIG REQUIRED)
-
 find_package(gflags CONFIG REQUIRED)
-
 find_package(CURL REQUIRED)
 
 include_directories("/opt/homebrew/opt/tesseract/include") 
 link_directories("/opt/homebrew/opt/tesseract/lib")
-
 include_directories("/opt/homebrew/opt/leptonica/include") 
 link_directories("/opt/homebrew/opt/leptonica/lib")
 
