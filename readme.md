@@ -148,6 +148,8 @@ int main() {
 
 ```bash
 
+Debug
+
 ============================================================================
 /textract/benchmarks/cache_benchmark.cc       relative    time/iter  iters/s
 ============================================================================
@@ -166,6 +168,29 @@ AtomicUnorderedMapMaxThreads                              451.00ns     2.22M
 AtomicUnorderedMapComplexSingleThreaded                   256.42ns     3.90M
 AtomicUnorderedMapComplexMultiThreaded                      1.68us   593.57K
 AtomicUnorderedMapComplexMaxThreads                         8.76us   114.17K
+============================================================================
+
+
+Fast Clang -Ofast
+
+============================================================================
+[...]/imgapp/benchmarks/cache_benchmark.cc     relative  time/iter   iters/s
+============================================================================
+UnorderedMapMutexedSingleThreaded                          61.15ns    16.35M
+UnorderedMapMutexedMultiThreaded                          781.00ns     1.28M
+UnorderedMapMutexedMaxThreads                               1.62us   616.71K
+ConcurrentHashMapSingleThreaded                           215.90ns     4.63M
+ConcurrentHashMapMultiThreaded                            864.01ns     1.16M
+ConcurrentHashMapMaxThreads                                 3.50us   285.73K
+ConcurrentHashMapComplexSingleThreaded                    282.30ns     3.54M
+ConcurrentHashMapComplexMultiThreaded                       1.32us   757.35K
+ConcurrentHashMapComplexMaxThreads                         14.95us    66.90K
+AtomicUnorderedMapSingleThreaded                           41.16ns    24.30M
+AtomicUnorderedMapMultiThreaded                            81.05ns    12.34M
+AtomicUnorderedMapMaxThreads                              440.18ns     2.27M
+AtomicUnorderedMapComplexSingleThreaded                   127.24ns     7.86M
+AtomicUnorderedMapComplexMultiThreaded                    511.31ns     1.96M
+AtomicUnorderedMapComplexMaxThreads                         6.31us   158.55K
 ============================================================================
 
 ```

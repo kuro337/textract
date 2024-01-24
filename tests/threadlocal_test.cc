@@ -1,21 +1,40 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <leptonica/allheaders.h>
 #include <omp.h>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
+
 #include <tesseract/baseapi.h>
 #include <thread>
 #include <vector>
 
-inline std::vector<uchar> readBytesFromFile(const std::string &filename) {
+class ThreadLocalTestSuite : public ::testing::Test {
+public:
+  const std::string inputFile = "../../../images/imgtext.jpeg";
+
+  const std::string path = "../../../images/";
+  const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
+                                           "compleximgtext.png",
+                                           "scatteredtext.png"};
+
+protected:
+  void SetUp() override { ::testing::internal::CaptureStderr(); }
+
+  void TearDown() override {
+
+    std::string captured_stdout_ = ::testing::internal::GetCapturedStderr();
+  }
+};
+
+inline std::vector<unsigned char>
+readBytesFromFile(const std::string &filename) {
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
   if (!file) {
     throw std::runtime_error("Failed to open file: " + filename);
   }
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
-  std::vector<uchar> buffer(size);
+  std::vector<unsigned char> buffer(size);
   if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
     throw std::runtime_error("Failed to read file: " + filename);
   }
@@ -23,19 +42,18 @@ inline std::vector<uchar> readBytesFromFile(const std::string &filename) {
 }
 
 std::string getTextOCR(tesseract::TessBaseAPI *ocr,
-                       const std::vector<uchar> &file_content,
+                       const std::vector<unsigned char> &file_content,
                        const std::string &lang) {
-  cv::Mat img = cv::imdecode(file_content, cv::IMREAD_COLOR);
-  if (img.empty()) {
-    throw std::runtime_error("Failed to load image from buffer");
-  }
+  Pix *image =
+      pixReadMem(reinterpret_cast<const l_uint8 *>(file_content.data()),
+                 file_content.size());
+  if (!image)
+    throw std::runtime_error("Failed to load image from memory buffer");
 
-  cv::Mat gray;
-  cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-  cv::threshold(gray, gray, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-  ocr->SetImage(gray.data, gray.cols, gray.rows, 1, gray.step);
+  ocr->SetImage(image);
   std::string outText(ocr->GetUTF8Text());
+
+  pixDestroy(&image);
 
   return outText;
 };
@@ -70,7 +88,7 @@ tesseract::TessBaseAPI *getThreadLocalOCR(const std::string &lang = "eng") {
   return ocrWrapper.ocrPtr;
 }
 
-void processImage(const std::vector<uchar> &file_content,
+void processImage(const std::vector<unsigned char> &file_content,
                   const std::string &lang) {
   try {
     auto ocr = getThreadLocalOCR(lang); // Get the thread-local OCR instance
@@ -81,11 +99,10 @@ void processImage(const std::vector<uchar> &file_content,
   }
 }
 
-TEST(TesseractMultithreadedTest, ProcessMultipleImages) {
+TEST_F(ThreadLocalTestSuite, ProcessMultipleImages) {
   std::vector<std::thread> threads;
   const int numThreads = 4;
 
-  const std::string inputFile = "../../images/imgtext.jpeg";
   auto content = readBytesFromFile(inputFile);
 
   for (int i = 0; i < numThreads; ++i) {
@@ -134,7 +151,7 @@ struct TessBaseAPIWrapperOpenMP {
 static TessBaseAPIWrapperOpenMP globalOcrWrapperOpenMP;
 #pragma omp threadprivate(globalOcrWrapperOpenMP)
 
-void processImageOpenMP(const std::vector<uchar> &file_content,
+void processImageOpenMP(const std::vector<unsigned char> &file_content,
                         const std::string &lang) {
   try {
     if (!globalOcrWrapperOpenMP.ocrPtr) {
@@ -148,11 +165,10 @@ void processImageOpenMP(const std::vector<uchar> &file_content,
     std::cout << "error generating text" << std::endl;
   }
 }
-TEST(TesseractMultithreadedTest, ProcessMultipleImagesOpenMP) {
+TEST_F(ThreadLocalTestSuite, ProcessMultipleImagesOpenMP) {
   const int numThreads = 4;
   omp_set_num_threads(numThreads);
 
-  const std::string inputFile = "../../images/imgtext.jpeg";
   auto content = readBytesFromFile(inputFile);
 
 #pragma omp parallel
@@ -181,14 +197,9 @@ void cleanUpOpenMPTesserat() {
   }
 }
 
-TEST(TesseractMultithreadedTest, MultipleFilesDivide) {
+TEST_F(ThreadLocalTestSuite, MultipleFilesDivide) {
   const int numThreads = 4;
   omp_set_num_threads(numThreads);
-
-  const std::string path = "../../images/";
-  const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
-                                           "compleximgtext.png",
-                                           "scatteredtext.png"};
 
 #pragma omp parallel for
   for (int i = 0; i < images.size(); ++i) {

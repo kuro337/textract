@@ -1,5 +1,5 @@
-#include "../textract.h"
 #include <gtest/gtest.h>
+#include <textract.h>
 
 using namespace imgstr;
 
@@ -16,7 +16,7 @@ TEST(SimilaritySuite, SingleString) {
 TEST(SimilaritySuite, ImageSHA256Equal) {
 
   using namespace std;
-  const string path = "../../images/";
+  const string path = "../../../images/";
   string file_a = path + "screenshot.png";
   string file_b = path + "dupescreenshot.png";
 
@@ -29,7 +29,7 @@ TEST(SimilaritySuite, ImageSHA256Equal) {
 TEST(SimilaritySuite, ImageSHA256Unequal) {
 
   using namespace std;
-  const string path = "../../images/";
+  const string path = "../../../images/";
   string file_a = path + "screenshot.png";
   string file_b = path + "imgtext.jpeg";
 

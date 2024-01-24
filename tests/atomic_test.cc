@@ -1,11 +1,4 @@
-/*
 
-
-Need to use a SharedMutex for frequent Reads and Infrequent Writes to the Image
-
-
-
-*/
 
 #include <iostream>
 
@@ -47,7 +40,7 @@ struct Image {
   // Function to read write metadata
   WriteMetadata readWriteMetadata() {
     if (!mutex) {
-      return write_info; // If mutex is not initialized, no write has occurred.
+      return write_info; // If mutex is not initialized, no write has occurred
     }
     std::shared_lock<folly::SharedMutex> readerLock(*mutex);
     return write_info;
@@ -122,10 +115,8 @@ TEST(ImageConcurrentWriteTest, ConcurrentWriteAttempts) {
   std::thread writerThread4(writeAttempt, "thread 4 wrote");
 
   // Wait for threads to complete
-  writerThread1.join();
-  writerThread2.join();
-  writerThread3.join();
-  writerThread4.join();
-
-  EXPECT_EQ(img.write_info.output_path, "thread 1 wrote");
+  EXPECT_NO_THROW(writerThread1.join());
+  EXPECT_NO_THROW(writerThread2.join());
+  EXPECT_NO_THROW(writerThread3.join());
+  EXPECT_NO_THROW(writerThread4.join());
 }

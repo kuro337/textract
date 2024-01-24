@@ -1,24 +1,30 @@
-#include "../textract.h"
 #include <algorithm>
+#include <cmath>
 #include <curl/curl.h>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
 #include <leptonica/allheaders.h>
-#include <opencv2/core/check.hpp>
 #include <tesseract/baseapi.h>
+#include <textract.h>
 
-using namespace imgstr;
+#ifdef _USE_OPENCV
+#include <opencv2/core/check.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#endif
 
 class MyTestSuite : public ::testing::Test {
 public:
-  const std::string tempDir = "tmp";
-  const std::string path = "../../images/";
-  const std::string inputFile = "../../images/imgtext.jpeg";
+  const std::string inputOpenTest = "../../../images/screenshot.png";
+
+  const std::string tempDir = "tmpOCR";
+  const std::string path = "../../../images/";
+  const std::string inputFile = "../../../images/imgtext.jpeg";
   const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
                                            "compleximgtext.png",
                                            "scatteredtext.png"};
-  ImgProcessor imageTranslator = ImgProcessor();
+  imgstr::ImgProcessor imageTranslator = imgstr::ImgProcessor();
 
 protected:
   void SetUp() override { ::testing::internal::CaptureStderr(); }
@@ -31,7 +37,9 @@ protected:
   }
 };
 
-TEST_F(MyTestSuite, EnvironmentTest) { EXPECT_NO_THROW(printSystemInfo()); }
+TEST_F(MyTestSuite, EnvironmentTest) {
+  EXPECT_NO_THROW(imgstr::printSystemInfo());
+}
 
 TEST_F(MyTestSuite, ConvertImageToTextFile) {
   imageTranslator.convertImageToTextFile(inputFile, tempDir);
@@ -46,9 +54,9 @@ TEST_F(MyTestSuite, WriteFileTest) {
                  [&](const std::string &img) { return path + img; });
 
   EXPECT_NO_THROW(imageTranslator.addFiles(paths));
-  EXPECT_NO_THROW(imageTranslator.convertImagesToTextFiles("tmp"));
+  EXPECT_NO_THROW(imageTranslator.convertImagesToTextFiles(tempDir));
 
-  std::vector<int> test_lengths = {20, 1, 2, 9};
+  std::vector<int> test_lengths = {20, 1, 1, 9};
 
   for (size_t i = 0; i < images.size(); ++i) {
     std::size_t lastDot = images[i].find_last_of('.');
@@ -74,9 +82,9 @@ TEST_F(MyTestSuite, WriteFileTest) {
 TEST_F(MyTestSuite, BasicAssertions) {
   tesseract::TessBaseAPI ocr;
 
-  for (int i = static_cast<int>(ISOLang::en);
-       i <= static_cast<int>(ISOLang::de); ++i) {
-    ISOLang lang = static_cast<ISOLang>(i);
+  for (int i = static_cast<int>(imgstr::ISOLang::en);
+       i <= static_cast<int>(imgstr::ISOLang::de); ++i) {
+    imgstr::ISOLang lang = static_cast<imgstr::ISOLang>(i);
     const char *langStr = isoToTesseractLang(lang).c_str();
 
     EXPECT_NO_THROW((ocr.Init(nullptr, langStr)));
@@ -99,6 +107,71 @@ TEST_F(MyTestSuite, BasicAssertions) {
   EXPECT_STRNE("hello", "world");
   EXPECT_EQ(7 * 6, 42);
 }
+
+std::string extractTextFromImageFileLeptonica(const std::string &file_path,
+                                              const std::string &lang = "eng") {
+
+  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+  if (api->Init(NULL, "eng")) {
+    fprintf(stderr, "Could not initialize tesseract.\n");
+    exit(1);
+  }
+  Pix *image = pixRead(file_path.c_str());
+
+  // fully automatic - suitable for single columns of text
+
+  api->SetPageSegMode(tesseract::PSM_AUTO);
+
+  api->SetImage(image);
+  std::string outText(api->GetUTF8Text());
+  outText = api->GetUTF8Text();
+
+  api->End();
+  delete api;
+  pixDestroy(&image);
+  return outText;
+}
+
+std::string extractTextLSTM(const std::string &file_path,
+                            const std::string &lang = "eng") {
+
+  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+  if (api->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY)) {
+    fprintf(stderr, "Could not initialize tesseract.\n");
+    exit(1);
+  }
+  Pix *image = pixRead(file_path.c_str());
+
+  api->SetImage(image);
+  std::string outText(api->GetUTF8Text());
+  outText = api->GetUTF8Text();
+
+  api->End();
+  delete api;
+  pixDestroy(&image);
+  return outText;
+}
+
+TEST_F(MyTestSuite, OEMvsLSTMAnalysis) {
+
+  auto start = imgstr::getStartTime();
+  auto res1 = extractTextFromImageFileLeptonica(inputOpenTest);
+
+  std::cout << res1 << '\n';
+
+  auto t1 = imgstr::getDuration(start);
+  std::cout << "Time Leptonica : " << t1 << '\n';
+
+  auto s2 = imgstr::getStartTime();
+  auto res2 = extractTextLSTM(inputOpenTest);
+
+  std::cout << res2 << '\n';
+
+  auto t2 = imgstr::getDuration(start);
+  std::cout << "Time LSTM: " << t2 << '\n';
+}
+
+#ifdef _USE_OPENCV
 
 std::string extractTextFromImageFileOpenCV(const std::string &file_path,
                                            const std::string &lang = "eng") {
@@ -124,42 +197,26 @@ std::string extractTextFromImageFileOpenCV(const std::string &file_path,
 
   return outText;
 }
+#endif
 
-std::string extractTextFromImageFileLeptonica(const std::string &file_path,
-                                              const std::string &lang = "eng") {
-
-  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-  if (api->Init(NULL, "eng")) {
-    fprintf(stderr, "Could not initialize tesseract.\n");
-    exit(1);
-  }
-  Pix *image = pixRead(file_path.c_str());
-
-  api->SetImage(image);
-  std::string outText(api->GetUTF8Text());
-  outText = api->GetUTF8Text();
-
-  api->End();
-  delete api;
-  pixDestroy(&image);
-  return outText;
-}
+#ifdef _USE_OPENCV
 
 TEST_F(MyTestSuite, LEPTONICA_VS_OPENCV) {
-  const std::string inputFile = "../../images/screenshot.png";
 
   auto start = getStartTime();
-  auto res1 = extractTextFromImageFileLeptonica(inputFile);
+  auto res1 = extractTextFromImageFileLeptonica(inputOpenTest);
 
   auto t1 = getDuration(start);
   std::cout << "Time Leptonica : " << t1 << '\n';
 
   auto s2 = getStartTime();
-  auto res2 = extractTextFromImageFileOpenCV(inputFile);
+  auto res2 = extractTextFromImageFileOpenCV(inputOpenTest);
 
   auto t2 = getDuration(start);
   std::cout << "Time OpenCV : " << t2 << '\n';
 }
+
+#endif
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
