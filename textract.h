@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
+#include <filesystem>
 #include <folly/AtomicUnorderedMap.h>
 #include <folly/SharedMutex.h>
 #include <fstream>
@@ -78,7 +79,7 @@ void printSystemInfo();
   "--------------------------------------------------------------------------" \
   "----------"
 
-inline constexpr std::string isoToTesseractLang(ISOLang isoLang) {
+inline std::string isoToTesseractLang(ISOLang isoLang) {
   switch (isoLang) {
   case ISOLang::en:
     return "eng";
@@ -102,6 +103,10 @@ inline constexpr std::string isoToTesseractLang(ISOLang isoLang) {
 #pragma region FILE_IO                    /* File IO Declarations */
 
 std::vector<unsigned char> readBytesFromFile(const std::string &filename);
+
+bool createFolder(const std::string &path);
+
+unsigned long deleteFolder(const std::string &path);
 
 void writeToNewFile(const std::string &content, const std::string &output_path);
 
@@ -534,7 +539,7 @@ private:
   }
 
 public:
-  ImgProcessor(size_t capacity = 1000)
+  ImgProcessor(size_t capacity = 1000, ImgMode img_mode = ImgMode::document)
       : logger(std::make_unique<AsyncLogger>()), files(),
         cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)),
         img_mode(ImgMode::document) {
@@ -562,7 +567,6 @@ public:
                   << processedImagesCount << END << '\n';
 
     cleanupOpenMPTesserat();
-    // cache.
   }
 
   void setImageMode(ImgMode img_mode) { this->img_mode = img_mode; }

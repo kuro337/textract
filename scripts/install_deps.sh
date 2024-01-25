@@ -1,19 +1,16 @@
 #!/bin/bash
 
-brew update
-brew upgrade
+# build from source
+# folly
+# googletest
+# cmake
 
-brew install openssl
-brew install libomp 
-brew install gflags
-brew install curl
-brew install tesseract
-brew install leptonica
-brew install folly
-brew install googletest
-
-if ! command -v cmake &> /dev/null; then
-    brew install cmake
-fi
+sudo apt-get update
+sudo apt-get install libssl-dev
+sudo apt-get install libleptonica-dev
+sudo apt-get install libtesseract-dev
+sudo apt-get install tesseract-ocr-eng  
 
 echo "All dependencies installed!"
+
+# cmake -DCMAKE_CXX_COMPILER=/home/linuxbrew/.linuxbrew/opt/llvm/bin/clang++ -DCMAKE_C_COMPILER=/home/linuxbrew/.linuxbrew/opt/llvm/bin/clang ../../

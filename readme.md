@@ -11,6 +11,7 @@
 # textract
 
 <br/>
+<br/>
 
 _Single Header High Performance_ **C++ Image Processing** Library to read content from Images and transform Images to text files.
 
@@ -27,7 +28,7 @@ Build from Source using **CMake**
 <br/>
 
 ```bash
-brew install opencv openssl libomp folly tesseract
+brew install openssl leptonica tesseract libomp
 ```
 
 <br/>
@@ -41,6 +42,11 @@ brew install opencv openssl libomp folly tesseract
 cd textract && mkdir build && cd build
 cmake ..
 make
+
+# or use the build script to build for all releases and run tests
+./build_all.sh --all --tests
+
+## Alternative Compilers ##
 
 # using LLVM and Clang++ directly
 cmake -DCMAKE_CXX_COMPILER=/path/to/clang++ -DCMAKE_C_COMPILER=/path/to/clang ..
@@ -57,11 +63,15 @@ echo $(brew --prefix llvm)/bin/clang
 
 <br/>
 
+[Linux (AArch64,x86) ](docs/linux.md)
+
+<br/>
+
 ## Design
 
 <br/>
 
-#### OpenCV and Tesseract
+#### leptonica and Tesseract
 
 For Processing images and using _Tesseract OCR_ to extract text from Images.
 
@@ -107,6 +117,10 @@ int main() {
 
     app.writeImageTextOut("cs101_notes.png", "cs_notes.txt");
 
+
+
+    app.createPDF("transcript_img.png");    /* Create searchable PDF's from images */
+
     return 0;
 }
 
@@ -129,6 +143,8 @@ int main() {
 
     app.setCores(6);
 
+    app.setMode(ImgMode::document);
+
     app.processImagesDir("/path/to/dir");
 
     app.getResults();
@@ -142,13 +158,13 @@ int main() {
 
 <br/>
 
-### In Memory Cache Benchmarks
+### In Memory Cache Performance
 
 <br/>
 
 ```bash
 
-Debug
+Debug -O0
 
 ============================================================================
 /textract/benchmarks/cache_benchmark.cc       relative    time/iter  iters/s
@@ -200,6 +216,31 @@ AtomicUnorderedMapComplexMaxThreads                         6.31us   158.55K
 It can be seen **AtomicUnorderedInsertMap** is over **8x** faster than the Concurrent HashMap.
 
 [AtomicUnorderedInsertMap](https://github.com/facebook/folly/blob/main/folly/AtomicUnorderedMap.h) provides an overview of the tradeoffs.
+
+<hr>
+
+<br/>
+
+**Note**
+
+_These are for reference and will vary depending on:_
+
+- cpu arch
+- release Mode
+- number of cores
+- types of images
+
+<br/>
+
+**Average Latencies** for reference using **4 cores** and batches of **10mb** upto **4gb**
+
+<hr>
+
+Document Images to Text Generations: **0.423081 ms**
+
+Complex Images to Text Generations: **0.674621 ms**
+
+Text Document to Searchable PDF Conversion: **0.381223 ms**
 
 <hr>
 
