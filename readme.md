@@ -63,7 +63,7 @@ echo $(brew --prefix llvm)/bin/clang
 
 <br/>
 
-[Linux (AArch64,x86) ](docs/linux.md)
+[Linux (AArch64, x86_64) ](docs/linux.md)
 
 <br/>
 
