@@ -1,0 +1,18 @@
+# options: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 80
+SpaceAfterCStyleCast: true
+UseTab: Never
+AllowShortIfStatementsOnASingleLine: false
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 3
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+AlignConsecutiveMacros: Consecutive
+UseCRLF: false
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Custom
+SpaceBeforeParens: ControlStatements
+IncludeBlocks: Regroup
+PointerAlignment: Right
+SortIncludes: true
