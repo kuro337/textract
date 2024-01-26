@@ -61,10 +61,10 @@ for ((i = 0; i < ${#opt_flags[@]}; i+=2)); do
 
         echo "----------------------------------------"
         echo "Running CMake command for ${build_type} build:"
-        echo "cmake -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm/bin/clang -DCMAKE_BUILD_TYPE=${cmake_build_type} -DCMAKE_CXX_FLAGS=${flag} ${extra_cmake_flags} ../.."
+        echo "-DCMAKE_BUILD_TYPE=${cmake_build_type} -DCMAKE_CXX_FLAGS=${flag} -DENABLE_TIMING=ON ${extra_cmake_flags} ../.."
         echo "----------------------------------------"
-
-        (cd "$build_dir" && cmake -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm/bin/clang -DCMAKE_BUILD_TYPE=${cmake_build_type} -DCMAKE_CXX_FLAGS="${flag}" ${extra_cmake_flags} ../..) || { echo "CMake configuration failed for ${build_type}"; exit 1; }
+        # -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm/bin/clang 
+        (cd "$build_dir" && cmake -DCMAKE_BUILD_TYPE=${cmake_build_type} -DENABLE_TIMING=ON -DCMAKE_CXX_FLAGS="${flag}" ${extra_cmake_flags} ../..) || { echo "CMake configuration failed for ${build_type}"; exit 1; }
         (cd "$build_dir" && make) || { echo "Make failed for ${build_type}"; exit 1; }
         
         if [ "$run_tests" == "--test" ]; then

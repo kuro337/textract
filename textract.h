@@ -48,10 +48,13 @@ enum class CORES { single, half, max };
 
 enum class ISOLang { en, es, fr, hi, zh, de };
 
-std::chrono::time_point<std::chrono::high_resolution_clock> getStartTime();
+using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-double getDuration(
-    const std::chrono::time_point<std::chrono::high_resolution_clock> &start);
+TimePoint getStartTime();
+
+double getDuration(const TimePoint &start);
+
+void printDuration(const TimePoint &startTime, const std::string &msg = "");
 
 void printSystemInfo();
 
@@ -102,6 +105,20 @@ inline std::string isoToTesseractLang(ISOLang isoLang) {
 
 #pragma region FILE_IO                    /* File IO Declarations */
 
+#ifdef _WIN32
+#define SEPARATOR '\\'
+#else
+#define SEPARATOR '/'
+#endif
+
+void createDirIfNotExists(const std::string &output_dir,
+                          const char path_separator = SEPARATOR);
+
+const std::string
+createQualifiedFilePath(const std::string &input_path,
+                        const std::string &output_dir,
+                        const char path_separator = SEPARATOR);
+
 std::vector<unsigned char> readBytesFromFile(const std::string &filename);
 
 bool createFolder(const std::string &path);
@@ -114,6 +131,15 @@ bool isImageFile(const std::filesystem::path &path);
 
 std::string getCurrentTimestamp();
 
+#ifdef ENABLE_TIMING
+static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+#define START_TIMING() startTime = imgstr::getStartTime()
+#define END_TIMING(msg) imgstr::printDuration(startTime, msg)
+#else
+#define START_TIMING()
+#define END_TIMING(msg)
+#endif
+
 #pragma endregion
 
 #pragma region OPENCV_UTILS               /* OpenCV Declarations */
@@ -122,6 +148,13 @@ enum class ImgMode { document, image };
 
 std::string getTextOCR(const std::vector<unsigned char> &file_content,
                        const std::string &lang, ImgMode img_mode);
+
+std::string getTextImgFile(const std::string &file_path,
+                           const std::string &lang = "eng");
+
+std::string getTextOCRNoClear(const std::vector<unsigned char> &file_content,
+                              const std::string &lang = "eng",
+                              ImgMode img_mode = ImgMode::document);
 
 #ifdef _USE_OPENCV
 std::string getTextOCROpenCV(const std::vector<unsigned char> &file_content,
@@ -261,8 +294,7 @@ static TesseractOCR thread_local_tesserat;
 #pragma omp threadprivate(thread_local_tesserat)
 
 inline void cleanupOpenMPTesserat() {
-  int num_cores = omp_get_num_procs();
-  omp_set_num_threads(4);
+
 #pragma omp parallel
   {
     if (thread_local_tesserat.ocrPtr) {
@@ -356,6 +388,7 @@ class ImgProcessor {
 
 private:
   ImgMode img_mode;
+  CORES num_cores;
   std::string dir;
   std::vector<std::string> queued;
   std::unordered_set<std::string> files;
@@ -363,7 +396,13 @@ private:
   folly::AtomicUnorderedInsertMap<std::string, Image> cache;
   std::atomic<double> totalProcessingTime{0.0};
   std::atomic<int> processedImagesCount{0};
+
   std::unique_ptr<AsyncLogger> logger;
+
+  const char path_separator = '/';
+#ifdef _WIN32
+  path_separator = '\\';
+#endif
 
   std::optional<std::reference_wrapper<const Image>>
   processImageFile(const std::string &file) {
@@ -439,6 +478,18 @@ private:
     }
 
     return processedText;
+  }
+
+  void ifValidImageFileAppendQueue(const std::filesystem::path &path) {
+    if (isImageFile(path)) {
+
+      auto file_path = path.string();
+
+      if (files.find(file_path) == files.end()) {
+        files.insert(file_path);
+        queued.emplace_back(file_path);
+      }
+    }
   }
 
   void addProcessingTime(std::atomic<double> &totalTime, double timeToAdd) {
@@ -539,12 +590,22 @@ private:
   }
 
 public:
-  ImgProcessor(size_t capacity = 1000, ImgMode img_mode = ImgMode::document)
+  template <typename T>
+  ImgProcessor(size_t capacity = 1000, T cores = 1) : ImgProcessor(capacity) {
+    setCores(cores);
+  }
+
+  ImgProcessor(size_t capacity = 1000)
       : logger(std::make_unique<AsyncLogger>()), files(),
         cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)),
         img_mode(ImgMode::document) {
-    logger->log() << "Processor Initialized";
-    omp_set_num_threads(4);
+    logger->log() << "Processor Initialized" << '\n'
+                  << "Threads Available: " << BOLD_WHITE
+                  << omp_get_max_threads() << END
+                  << "\nCores Available: " << BOLD_WHITE << omp_get_num_procs()
+                  << END << '\n';
+
+    setCores(1);
 
 #ifdef _DEBUGAPP
     logger->log() << ERROR << "DEBUG FLAGS ON\n" << END;
@@ -567,6 +628,27 @@ public:
                   << processedImagesCount << END << '\n';
 
     cleanupOpenMPTesserat();
+  }
+
+  template <typename T> void setCores(T cores) {
+    if constexpr (std::is_same<T, CORES>::value) {
+      switch (cores) {
+      case CORES::single:
+        omp_set_num_threads(1);
+        break;
+      case CORES::half:
+        omp_set_num_threads(omp_get_num_procs() / 2);
+        break;
+      case CORES::max:
+        omp_set_num_threads(omp_get_num_procs());
+        break;
+      }
+    } else if constexpr (std::is_integral<T>::value) {
+      int numThreads = std::min(static_cast<int>(cores), omp_get_num_procs());
+      omp_set_num_threads(numThreads);
+    } else {
+      static_assert(false, "Unsupported type for setCores");
+    }
   }
 
   void setImageMode(ImgMode img_mode) { this->img_mode = img_mode; }
@@ -594,20 +676,35 @@ public:
 
   void processImagesDir(const std::string &directory, bool write_output = false,
                         const std::string &output_path = "") {
+
     for (const auto &entry : std::filesystem::directory_iterator(directory)) {
-      if (isImageFile(entry.path())) {
 
-        auto file_path = entry.path().string();
-
-        if (files.find(file_path) == files.end()) {
-          files.insert(file_path);
-          queued.emplace_back(file_path);
-        }
-      }
+      ifValidImageFileAppendQueue(entry.path());
     }
 
     if (write_output) {
-      convertImagesToTextFiles(output_path);
+      convertImagesToTextFilesParallel(output_path);
+    }
+  }
+
+  void simpleProcessDir(const std::string &directory,
+                        const std::string &output_path = "") {
+
+    std::vector<std::string> filePaths;
+    for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+      if (isImageFile(entry.path())) {
+        filePaths.push_back(entry.path().string());
+      }
+    }
+
+#pragma omp parallel for
+    for (size_t i = 0; i < filePaths.size(); ++i) {
+      START_TIMING();
+      auto file_content = readBytesFromFile(filePaths[i]);
+      auto img_text = getTextOCRNoClear(file_content);
+      auto out_path = createQualifiedFilePath(filePaths[i], output_path);
+      writeTextToFile(img_text, out_path);
+      END_TIMING("simple: file processed and written ");
     }
   }
 
@@ -661,25 +758,10 @@ public:
   void convertImageToTextFile(const std::string &input_file,
                               const std::string &output_dir = "",
                               ISOLang lang = ISOLang::en) {
-#ifdef _WIN32
-    std::string path_separator = "\\";
-#else
-    std::string path_separator = "/";
-#endif
 
-    if (!output_dir.empty() && !std::filesystem::exists(output_dir))
-      std::filesystem::create_directories(output_dir);
+    createDirIfNotExists(output_dir);
 
-    std::string outputFilePath = output_dir;
-    if (!output_dir.empty() && output_dir.back() != path_separator.back()) {
-      outputFilePath += path_separator;
-    }
-
-    std::size_t lastSlash = input_file.find_last_of("/\\");
-    std::size_t lastDot = input_file.find_last_of('.');
-    std::string filename =
-        input_file.substr(lastSlash + 1, lastDot - lastSlash - 1);
-    outputFilePath += filename + ".txt";
+    std::string output_file = createQualifiedFilePath(input_file, output_dir);
 
     auto imageOpt = getImageOrProcess(input_file, lang);
 
@@ -687,9 +769,8 @@ public:
       const Image &image = imageOpt.value().get();
 
       if (!image.write_info.output_written) {
-        writeTextToFile(image.text_content, outputFilePath);
-
-        image.updateWriteInfo(outputFilePath, getCurrentTimestamp(), true);
+        writeTextToFile(image.text_content, output_file);
+        image.updateWriteInfo(output_file, getCurrentTimestamp(), true);
       } else {
         printOutputAlreadyWritten(image);
       }
@@ -698,47 +779,31 @@ public:
 
   void convertImagesToTextFilesParallel(const std::string &output_dir = "",
                                         ISOLang lang = ISOLang::en) {
-#ifdef _WIN32
-    std::string path_separator = "\\";
-#else
-    std::string path_separator = "/";
-#endif
 
     if (!output_dir.empty() && !std::filesystem::exists(output_dir))
       std::filesystem::create_directories(output_dir);
 
-    auto start = getStartTime();
-
     if (queued.empty()) {
-      logger->log() << BOLD_WHITE << "All files have already been processed."
-                    << END;
+      logger->log() << BOLD_WHITE << "All files already processed." << END;
       return;
     }
 
+#pragma omp parallel for
     for (const auto &file : queued) {
+      START_TIMING();
       convertImageToTextFile(file, output_dir, lang);
+      END_TIMING("parallel() - file processed ");
     }
 
-    printProcessingDuration(getDuration(start));
     queued.clear();
   }
 
   void convertImagesToTextFiles(const std::string &output_dir = "",
                                 ISOLang lang = ISOLang::en) {
-#ifdef _WIN32
-    std::string path_separator = "\\";
-#else
-    std::string path_separator = "/";
-#endif
-
-    if (!output_dir.empty() && !std::filesystem::exists(output_dir))
-      std::filesystem::create_directories(output_dir);
-
-    auto start = getStartTime();
-
+    START_TIMING();
+    createDirIfNotExists(output_dir);
     if (queued.empty()) {
-      logger->log() << BOLD_WHITE << "All files have already been processed."
-                    << END;
+      logger->log() << BOLD_WHITE << "All files already processed." << END;
       return;
     }
 
@@ -746,9 +811,8 @@ public:
     for (const auto &file : queued) {
       convertImageToTextFile(file, output_dir, lang);
     }
-
-    printProcessingDuration(getDuration(start));
     queued.clear();
+    END_TIMING("convertImagesToTextFiles() : ");
   }
 
   void getResults() { printImagesInfo(); }
@@ -858,6 +922,14 @@ inline std::string getTextOCR(const std::vector<unsigned char> &file_content,
 
   /* Leptonica reads 40% or more faster than OpenCV */
 
+#ifdef _DEBUGAPP
+  int thread_id = omp_get_thread_num();
+  std::cerr << ERROR << "getTextOCR "
+            << (img_mode == ImgMode::document ? "document" : "image")
+            << " mode " << END << " -> called from thread: " << thread_id
+            << std::endl;
+#endif
+
   if (!thread_local_tesserat.ocrPtr) {
     thread_local_tesserat.init(lang, img_mode);
   }
@@ -868,12 +940,63 @@ inline std::string getTextOCR(const std::vector<unsigned char> &file_content,
     throw std::runtime_error("Failed to load image from memory buffer");
 
   thread_local_tesserat->SetImage(image);
-  std::string outText(thread_local_tesserat->GetUTF8Text());
+
+  char *rawText = thread_local_tesserat->GetUTF8Text();
+  std::string outText(rawText);
+
+  delete[] rawText;
 
   pixDestroy(&image);
   thread_local_tesserat->Clear();
   return outText;
 };
+
+inline std::string
+getTextOCRNoClear(const std::vector<unsigned char> &file_content,
+                  const std::string &lang, ImgMode img_mode) {
+
+  /* Leptonica reads 40% or more faster than OpenCV */
+
+  if (!thread_local_tesserat.ocrPtr) {
+    thread_local_tesserat.init(lang, img_mode);
+  }
+  Pix *image =
+      pixReadMem(reinterpret_cast<const l_uint8 *>(file_content.data()),
+                 file_content.size());
+  if (!image)
+    throw std::runtime_error("Failed to load image from memory buffer");
+
+  thread_local_tesserat->SetImage(image);
+
+  char *rawText = thread_local_tesserat->GetUTF8Text();
+  std::string outText(rawText);
+
+  delete[] rawText;
+  pixDestroy(&image);
+
+  return outText;
+};
+
+inline std::string getTextImgFile(const std::string &file_path,
+                                  const std::string &lang) {
+
+  if (!thread_local_tesserat.ocrPtr) {
+    thread_local_tesserat.init(lang);
+  }
+
+  Pix *image = pixRead(file_path.c_str());
+
+  thread_local_tesserat->SetImage(image);
+
+  char *rawText = thread_local_tesserat->GetUTF8Text();
+  std::string outText(rawText);
+
+  delete[] rawText;
+
+  pixDestroy(&image);
+  thread_local_tesserat->Clear();
+  return outText;
+}
 
 #ifdef _USE_OPENCV
 
@@ -971,6 +1094,34 @@ inline std::string extractTextFromImage(const std::string &file_path,
 
 #pragma region FILE_IO_IMPL               /* STL File I/O Implementations */
 
+inline void createDirIfNotExists(const std::string &output_dir,
+                                 const char path_separator) {
+
+  if (!output_dir.empty() && !std::filesystem::exists(output_dir))
+    std::filesystem::create_directories(output_dir);
+}
+
+inline const std::string createQualifiedFilePath(const std::string &input_path,
+                                                 const std::string &output_dir,
+                                                 const char path_separator) {
+  if (!output_dir.empty() && !std::filesystem::exists(output_dir))
+    std::filesystem::create_directories(output_dir);
+
+  std::string outputFilePath = output_dir;
+  if (!output_dir.empty() && output_dir.back() != path_separator) {
+    outputFilePath += path_separator;
+  }
+
+  std::size_t lastSlash = input_path.find_last_of("/\\");
+  std::size_t lastDot = input_path.find_last_of('.');
+  std::string filename =
+      input_path.substr(lastSlash + 1, lastDot - lastSlash - 1);
+
+  outputFilePath += filename + ".txt";
+
+  return outputFilePath;
+}
+
 inline std::vector<unsigned char>
 readBytesFromFile(const std::string &filename) {
 
@@ -1031,12 +1182,12 @@ inline double getDuration(const time_point &startTime) {
   return std::chrono::duration<double>(endTime - startTime).count();
 }
 
-inline void printDuration(const time_point &startTime,
-                          const std::string &msg = "") {
+inline void printDuration(const time_point &startTime, const std::string &msg) {
   auto endTime = high_res_clock::now();
-
-  std::cout << msg << std::chrono::duration<double>(endTime - startTime).count()
-            << "ms" << std::endl;
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      endTime - startTime);
+  std::cout << BOLD << CYAN << msg << duration.count() << " ms" << END
+            << std::endl;
 }
 
 inline void printSystemInfo() {

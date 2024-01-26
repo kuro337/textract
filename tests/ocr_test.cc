@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <curl/curl.h>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
@@ -18,7 +20,7 @@ class MyTestSuite : public ::testing::Test {
 public:
   const std::string inputOpenTest = "../../../images/screenshot.png";
 
-  const std::string tempDir = "tmpOCR";
+  std::string tempDir = "tmpOCR";
   const std::string path = "../../../images/";
   const std::string inputFile = "../../../images/imgtext.jpeg";
   const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
@@ -31,9 +33,10 @@ protected:
 
   void TearDown() override {
 
-    std::string captured_stdout_ = ::testing::internal::GetCapturedStderr();
-
-    std::filesystem::remove_all(tempDir);
+    std::filesystem::path tmp{std::filesystem::temp_directory_path()};
+    std::filesystem::create_directories(tmp / "abcdef/example");
+    std::uintmax_t n{std::filesystem::remove_all(tmp / "abcdef")};
+    std::cout << "Deleted " << n << " files or directories\n";
   }
 };
 

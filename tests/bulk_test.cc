@@ -15,23 +15,39 @@ public:
 protected:
   void SetUp() override {}
 
-  void TearDown() override {
-
-    //  std::filesystem::remove_all(outputInNewFolderInInputImages);
-  }
+  void TearDown() override { std::filesystem::remove_all(outputBulkImageMode); }
 };
+
+TEST_F(PublicAPITests, ProcessBulkDocumentsSimple) {
+
+  app.simpleProcessDir(path, outputBulkDocMode);
+}
+
+TEST_F(PublicAPITests, ProcessBulkDocumentImages) {
+
+  app.processImagesDir(path, true, outputBulkDocMode);
+  EXPECT_NO_THROW(app.getResults());
+
+  /*
+
+      1000 Files
+      Total Time      : 680387 ms ~ 11 minutes
+      Average Latency : 0.679933 ms
+
+  */
+}
 
 TEST_F(PublicAPITests, ProcessFilesImageMode) {
   app.setImageMode(imgstr::ImgMode::image);
-
   app.processImagesDir(path, true, outputBulkImageMode);
-  //   EXPECT_NO_THROW(app.getResults());
+
+  EXPECT_NO_THROW(app.getResults());
 }
 
 TEST_F(PublicAPITests, ProcessFilesDocumentMode) {
-  // app.setImageMode(imgstr::ImgMode::document);
-  //  app.processImagesDir(path, true, outputBulkDocMode);
-  //  EXPECT_NO_THROW(app.getResults());
+  app.setImageMode(imgstr::ImgMode::document);
+  app.processImagesDir(path, true, outputBulkDocMode);
+  EXPECT_NO_THROW(app.getResults());
 }
 
 /*

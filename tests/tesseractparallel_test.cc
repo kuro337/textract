@@ -1,9 +1,9 @@
-#include <algorithm>
-#include <cmath>
-#include <curl/curl.h>
+
+
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
+
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
@@ -50,15 +50,16 @@ void useTesseractInstancePerFile(const std::vector<std::string> &files,
     Pix *image = pixRead((*it).c_str());
 
     api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
+
+    char *rawText = api->GetUTF8Text();
+    std::string outText(rawText);
+
+    delete[] rawText;
 
     pixDestroy(&image);
 
     api->End();
     delete api;
-
-    // return outText;
   }
 }
 
@@ -79,11 +80,15 @@ void useTesseractSharedInstance(const std::vector<std::string> &files,
     Pix *image = pixRead((*it).c_str());
 
     api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
 
     pixDestroy(&image);
-    // return outText;
+
+    char *rawText = api->GetUTF8Text();
+    std::string outText(rawText);
+
+    delete[] rawText;
+
+    pixDestroy(&image);
   }
 
   api->End();
