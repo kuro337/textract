@@ -17,9 +17,9 @@ if(ENABLE_TIMING)
 endif()
 
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_definitions("ASAN_OPTIONS=detect_leaks=1,detect_stack_use_after_return=1")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT APPLE)
     add_compile_definitions(_DEBUGAPP)
+    add_compile_definitions("ASAN_OPTIONS=detect_leaks=1,detect_stack_use_after_return=1")
     # Enable LLVM ASan (Address Sanitizer, Mem Leaks Detection)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address")
@@ -44,7 +44,6 @@ if (NOT Leptonica_FOUND)
     pkg_check_modules(Leptonica REQUIRED IMPORTED_TARGET lept)
 endif()
 
-
 # gtest
 include(FetchContent)
 FetchContent_Declare(
@@ -55,7 +54,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # windows setting
 FetchContent_MakeAvailable(googletest)
 
-# main
 
 add_executable(
  main
@@ -100,11 +98,11 @@ foreach(TEST_EXECUTABLE IN LISTS TEST_EXECUTABLES)
     set_target_properties(${TEST_EXECUTABLE} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     )
-
     # Common libraries
     target_link_libraries(${TEST_EXECUTABLE}
       PUBLIC GTest::gtest_main
       PUBLIC OpenSSL::Crypto
+      PUBLIC OpenSSL::SSL
       PUBLIC PkgConfig::Tesseract 
       PUBLIC PkgConfig::Leptonica 
       PUBLIC Folly::folly

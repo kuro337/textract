@@ -4,44 +4,43 @@
 #include <vector>
 
 class PublicAPITests : public ::testing::Test {
-public:
-  const std::string inputFile = "../../../images/imgtext.jpeg";
+  public:
+    const std::string inputFile = "../../images/imgtext.jpeg";
 
-  const std::string outputInNewFolderInInputImages =
-      "../../../images/processed";
+    const std::string outputInNewFolderInInputImages = "../../images/processed";
 
-  const std::string path = "../../../images/";
-  const std::vector<std::string> images = {
-      path + "screenshot.png", path + "imgtext.jpeg",
-      path + "compleximgtext.png", path + "scatteredtext.png"};
+    const std::string path = "../../images/";
+    const std::vector<std::string> images = {
+        path + "screenshot.png", path + "imgtext.jpeg",
+        path + "compleximgtext.png", path + "scatteredtext.png"};
 
-  const std::string outputDirWrite = "tmpapi";
-  const std::string diroutputTest = "tmpdir";
+    const std::string outputDirWrite = "tmpapi";
+    const std::string diroutputTest = "tmpdir";
 
-  imgstr::ImgProcessor app = imgstr::ImgProcessor();
+    imgstr::ImgProcessor app = imgstr::ImgProcessor();
 
-protected:
-  void SetUp() override {}
+  protected:
+    void SetUp() override {}
 
-  void TearDown() override {
+    void TearDown() override {
 
-    std::filesystem::remove_all(outputDirWrite);
-    std::filesystem::remove_all(diroutputTest);
-    std::filesystem::remove_all(outputInNewFolderInInputImages);
-  }
+        std::filesystem::remove_all(outputDirWrite);
+        std::filesystem::remove_all(diroutputTest);
+        std::filesystem::remove_all(outputInNewFolderInInputImages);
+    }
 };
 
 /* All Tests Passed Memory Sanitization ASan */
 
 TEST_F(PublicAPITests, GetTextFromOneImage) {
 
-  auto text = app.getImageText(inputFile);
-  ASSERT_TRUE(text.has_value());
-  EXPECT_EQ("HAWAII\n", text.value());
-
-  if (text) {
+    auto text = app.getImageText(inputFile);
+    ASSERT_TRUE(text.has_value());
     EXPECT_EQ("HAWAII\n", text.value());
-  }
+
+    if (text) {
+        EXPECT_EQ("HAWAII\n", text.value());
+    }
 }
 
 /*
@@ -93,13 +92,13 @@ execution times for different tasks or iterations within the 'Simple' and
 
 TEST_F(PublicAPITests, ProcessSimpleDir) {
 
-  EXPECT_NO_THROW(app.simpleProcessDir(path, outputDirWrite););
+    EXPECT_NO_THROW(app.simpleProcessDir(path, outputDirWrite););
 }
 
 TEST_F(PublicAPITests, ProcessFilesFromDir) {
 
-  EXPECT_NO_THROW(
-      app.processImagesDir(path, true, outputInNewFolderInInputImages));
+    EXPECT_NO_THROW(
+        app.processImagesDir(path, true, outputInNewFolderInInputImages));
 }
 
 TEST_F(PublicAPITests, Results) { EXPECT_NO_THROW(app.getResults()); }
@@ -115,16 +114,16 @@ ImgMode::image sets : ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextDocumentMode) {
 
-  app.addFiles(images);
+    app.addFiles(images);
 
-  EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
+    EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
 };
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextImageMode) {
 
-  app.setImageMode(imgstr::ImgMode::image);
+    app.setImageMode(imgstr::ImgMode::image);
 
-  app.addFiles(images);
+    app.addFiles(images);
 
-  EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
+    EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
 };

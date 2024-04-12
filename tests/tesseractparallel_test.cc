@@ -1,119 +1,138 @@
 
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
-
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
 
 class ParallelPerfTesseract : public ::testing::Test {
-public:
-  const std::string tempDir = "paralleloutput";
-  const std::string path = "../../../images/";
-  const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
-                                           "compleximgtext.png",
-                                           "scatteredtext.png"};
+  public:
+    const std::string tempDir = "paralleloutput";
+    // const std::string path = "../../../images/"; for ./build.sh tests
+    const std::string path = "../../images/";   // cmbc build
 
-  imgstr::ImgProcessor imageTranslator = imgstr::ImgProcessor();
+    const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
+                                             "compleximgtext.png",
+                                             "scatteredtext.png"};
 
-  std::vector<std::string> qual_paths;
+    imgstr::ImgProcessor imageTranslator = imgstr::ImgProcessor();
 
-protected:
-  void SetUp() override {
+    std::vector<std::string> qual_paths;
 
-    for (auto it = images.begin(); it != images.end(); it++) {
-      qual_paths.emplace_back(path + (*it));
+  protected:
+    void SetUp() override {
+
+        std::cout << "Current Path: " << std::filesystem::current_path()
+                  << '\n';
+        auto files = std::filesystem::directory_iterator(path);
+
+        for (const auto &f : files) {
+            std::cout << "File: " << f.path() << '\n';
+        }
+
+        for (auto it = images.begin(); it != images.end(); it++) {
+            auto p = path + *it;
+            if (std::filesystem::exists(p)) {
+                qual_paths.emplace_back(path + (*it));
+            } else {
+                std::cerr << "Invalid Path: " << p << '\n';
+            }
+        }
     }
-  }
 
-  void TearDown() override {
+    void TearDown() override {
 
-    // std::string captured_stdout_ = ::testing::internal::GetCapturedStderr();
-    // std::filesystem::remove_all(tempDir);
-  }
+        // std::string captured_stdout_ =
+        // ::testing::internal::GetCapturedStderr();
+        // std::filesystem::remove_all(tempDir);
+    }
 };
 
-void useTesseractInstancePerFile(const std::vector<std::string> &files,
-                                 const std::string &lang = "eng") {
+void
+useTesseractInstancePerFile(const std::vector<std::string> &files,
+                            const std::string &lang = "eng") {
 
-  for (auto it = files.begin(); it != files.end(); it++) {
+    for (auto it = files.begin(); it != files.end(); it++) {
+        auto start = imgstr::getStartTime();
+
+        tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+        if (api->Init(NULL, "eng")) {
+            fprintf(stderr, "Could not initialize tesseract.\n");
+            exit(1);
+        }
+        imgstr::printDuration(start, "Tesserat Init Time Shared : ");
+        Pix *image = pixRead((*it).c_str());
+
+        api->SetImage(image);
+
+        char *rawText = api->GetUTF8Text();
+        std::string outText(rawText);
+
+        delete[] rawText;
+
+        pixDestroy(&image);
+
+        api->End();
+        delete api;
+    }
+}
+
+void
+useTesseractSharedInstance(const std::vector<std::string> &files,
+                           const std::string &lang = "eng") {
+
     auto start = imgstr::getStartTime();
 
     tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
     if (api->Init(NULL, "eng")) {
-      fprintf(stderr, "Could not initialize tesseract.\n");
-      exit(1);
+        fprintf(stderr, "Could not initialize tesseract.\n");
+        exit(1);
     }
     imgstr::printDuration(start, "Tesserat Init Time Shared : ");
-    Pix *image = pixRead((*it).c_str());
 
-    api->SetImage(image);
+    for (auto it = files.begin(); it != files.end(); it++) {
 
-    char *rawText = api->GetUTF8Text();
-    std::string outText(rawText);
+        Pix *image = pixRead((*it).c_str());
 
-    delete[] rawText;
+        api->SetImage(image);
 
-    pixDestroy(&image);
+        pixDestroy(&image);
+
+        char *rawText = api->GetUTF8Text();
+        std::string outText(rawText);
+
+        delete[] rawText;
+
+        pixDestroy(&image);
+    }
 
     api->End();
     delete api;
-  }
-}
-
-void useTesseractSharedInstance(const std::vector<std::string> &files,
-                                const std::string &lang = "eng") {
-
-  auto start = imgstr::getStartTime();
-
-  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-  if (api->Init(NULL, "eng")) {
-    fprintf(stderr, "Could not initialize tesseract.\n");
-    exit(1);
-  }
-  imgstr::printDuration(start, "Tesserat Init Time Shared : ");
-
-  for (auto it = files.begin(); it != files.end(); it++) {
-
-    Pix *image = pixRead((*it).c_str());
-
-    api->SetImage(image);
-
-    pixDestroy(&image);
-
-    char *rawText = api->GetUTF8Text();
-    std::string outText(rawText);
-
-    delete[] rawText;
-
-    pixDestroy(&image);
-  }
-
-  api->End();
-  delete api;
 };
 
 TEST_F(ParallelPerfTesseract, OEMvsLSTMAnalysis) {
 
-  auto start = imgstr::getStartTime();
+    auto start = imgstr::getStartTime();
 
-  useTesseractSharedInstance(qual_paths);
+    useTesseractSharedInstance(qual_paths);
 
-  auto t1 = imgstr::getDuration(start);
-  std::cout << "Time Shared Instance : " << t1 << "ms\n";
+    auto t1 = imgstr::getDuration(start);
+    std::cout << "Time Shared Instance : " << t1 << "ms\n";
 
-  auto s2 = imgstr::getStartTime();
+    auto s2 = imgstr::getStartTime();
 
-  useTesseractInstancePerFile(qual_paths);
+    useTesseractInstancePerFile(qual_paths);
 
-  auto t2 = imgstr::getDuration(start);
-  std::cout << "Time Per Instance : " << t2 << "ms\n";
+    auto t2 = imgstr::getDuration(start);
+    std::cout << "Time Per Instance : " << t2 << "ms\n";
 }
 
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+int
+main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
 
-  return RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }

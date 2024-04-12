@@ -85,7 +85,7 @@ void printSystemInfo();
     "--"                                                                       \
     "----------"
 
-inline std::string
+inline const char *
 isoToTesseractLang(ISOLang isoLang) {
     switch (isoLang) {
     case ISOLang::en:
@@ -730,18 +730,28 @@ class ImgProcessor {
                                 const std::string &output_dir = "",
                                 ISOLang lang = ISOLang::en) {
 
+        std::cout << "Converting image to text file..." << std::endl;
+
         createDirIfNotExists(output_dir);
+
+        std::cout << "Created output dir" << std::endl;
 
         std::string output_file =
             createQualifiedFilePath(input_file, output_dir);
+
+        std::cout << "Getting Image or Processing" << std::endl;
 
         auto imageOpt = getImageOrProcess(input_file, lang);
 
         if (imageOpt) {
 
+            std::cout << "imageOpt present" << std::endl;
+
             const Image &image = imageOpt.value().get();
 
             if (!image.write_info.output_written) {
+
+                std::cout << "Write Info.output_written" << std::endl;
 
                 writeTextToFile(image.text_content, output_file);
                 image.updateWriteInfo(output_file, getCurrentTimestamp(), true);
@@ -1260,8 +1270,7 @@ printDuration(const time_point &startTime, const std::string &msg) {
     auto endTime = high_res_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         endTime - startTime);
-    std::cout << BOLD << CYAN << msg << duration.count() << " ms" << END
-              << std::endl;
+    std::cout << CYAN << msg << duration.count() << " ms" << END << std::endl;
 }
 
 inline void

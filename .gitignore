@@ -5,3 +5,4 @@ read.md
 images
 test_images
 bulk
+tests/bulk_test.cc
