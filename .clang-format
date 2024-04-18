@@ -1,18 +1,86 @@
 # options: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 BasedOnStyle: LLVM
 IndentWidth: 4
-ColumnLimit: 80
 SpaceAfterCStyleCast: true
 UseTab: Never
-AllowShortIfStatementsOnASingleLine: false
 AlignTrailingComments: true
-SpacesBeforeTrailingComments: 3
-AlwaysBreakAfterReturnType: TopLevelDefinitions
 AlignConsecutiveMacros: Consecutive
+AlignConsecutiveBitFields: true
 UseCRLF: false
 AlignAfterOpenBracket: Align
 BreakBeforeBraces: Custom
 SpaceBeforeParens: ControlStatements
-IncludeBlocks: Regroup
 PointerAlignment: Right
 SortIncludes: true
+AllowAllConstructorInitializersOnNextLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+SortUsingDeclarations: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+TabWidth: 4
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackParameters: true
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: true
+  SplitEmptyFunction: true
+  SplitEmptyNamespace: true
+  SplitEmptyRecord: true
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: false
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
+BreakStringLiterals: true
+ColumnLimit: 160
+CompactNamespaces: true
+Cpp11BracedListStyle: true
+DeriveLineEnding: false
+DerivePointerAlignment: false
+FixNamespaceComments: true
+IncludeBlocks: Merge
+IndentCaseLabels: true
+IndentPPDirectives: None
+IndentWrappedFunctionNames: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All
+PenaltyBreakAssignment: 16
+PenaltyBreakBeforeFirstCallParameter: 2
+PenaltyBreakString: 64
+PenaltyExcessCharacter: 0
+PenaltyReturnTypeOnItsOwnLine: 0
+ReflowComments: true

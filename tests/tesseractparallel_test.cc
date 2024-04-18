@@ -18,7 +18,7 @@ class ParallelPerfTesseract : public ::testing::Test {
                                              "compleximgtext.png",
                                              "scatteredtext.png"};
 
-    imgstr::ImgProcessor imageTranslator = imgstr::ImgProcessor();
+    imgstr::ImgProcessor imageTranslator;
 
     std::vector<std::string> qual_paths;
 
@@ -29,16 +29,16 @@ class ParallelPerfTesseract : public ::testing::Test {
                   << '\n';
         auto files = std::filesystem::directory_iterator(path);
 
-        for (const auto &f : files) {
-            std::cout << "File: " << f.path() << '\n';
+        for (const auto &file : files) {
+            std::cout << "File: " << file.path() << '\n';
         }
 
-        for (auto it = images.begin(); it != images.end(); it++) {
-            auto p = path + *it;
-            if (std::filesystem::exists(p)) {
-                qual_paths.emplace_back(path + (*it));
+        for (const auto &image : images) {
+            auto fpath = path + image;
+            if (std::filesystem::exists(fpath)) {
+                qual_paths.emplace_back(path + image);
             } else {
-                std::cerr << "Invalid Path: " << p << '\n';
+                std::cerr << "Invalid Path: " << fpath << '\n';
             }
         }
     }
@@ -55,16 +55,16 @@ void
 useTesseractInstancePerFile(const std::vector<std::string> &files,
                             const std::string &lang = "eng") {
 
-    for (auto it = files.begin(); it != files.end(); it++) {
+    for (const auto &file : files) {
         auto start = imgstr::getStartTime();
 
-        tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-        if (api->Init(NULL, "eng")) {
+        auto *api = new tesseract::TessBaseAPI();
+        if (api->Init(nullptr, "eng") != 0) {
             fprintf(stderr, "Could not initialize tesseract.\n");
             exit(1);
         }
         imgstr::printDuration(start, "Tesserat Init Time Shared : ");
-        Pix *image = pixRead((*it).c_str());
+        Pix *image = pixRead(file.c_str());
 
         api->SetImage(image);
 
@@ -86,16 +86,16 @@ useTesseractSharedInstance(const std::vector<std::string> &files,
 
     auto start = imgstr::getStartTime();
 
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-    if (api->Init(NULL, "eng")) {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng") != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
         exit(1);
     }
     imgstr::printDuration(start, "Tesserat Init Time Shared : ");
 
-    for (auto it = files.begin(); it != files.end(); it++) {
+    for (const auto &file : files) {
 
-        Pix *image = pixRead((*it).c_str());
+        Pix *image = pixRead(file.c_str());
 
         api->SetImage(image);
 
@@ -119,19 +119,19 @@ TEST_F(ParallelPerfTesseract, OEMvsLSTMAnalysis) {
 
     useTesseractSharedInstance(qual_paths);
 
-    auto t1 = imgstr::getDuration(start);
-    std::cout << "Time Shared Instance : " << t1 << "ms\n";
+    auto time1 = imgstr::getDuration(start);
+    std::cout << "Time Shared Instance : " << time1 << "ms\n";
 
-    auto s2 = imgstr::getStartTime();
+    auto start2 = imgstr::getStartTime();
 
     useTesseractInstancePerFile(qual_paths);
 
-    auto t2 = imgstr::getDuration(start);
-    std::cout << "Time Per Instance : " << t2 << "ms\n";
+    auto time2 = imgstr::getDuration(start);
+    std::cout << "Time Per Instance : " << time2 << "ms\n";
 }
 
-int
-main(int argc, char **argv) {
+auto
+main(int argc, char **argv) -> int {
     ::testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

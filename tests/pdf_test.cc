@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <iostream>
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
@@ -27,14 +26,14 @@ createPDF(const std::string &input_path, const std::string &output_path) {
 
     bool textonly = false;
 
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-    if (api->Init(datapath, "eng")) {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(datapath, "eng") != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
         delete api;   // Don't forget to delete api in case of failure
         return;
     }
 
-    tesseract::TessPDFRenderer *renderer =
+    auto *renderer =
         new tesseract::TessPDFRenderer(output_path.c_str(), datapath, textonly);
 
     bool succeed = api->ProcessPages(input_path.c_str(), nullptr, 0, renderer);

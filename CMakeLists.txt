@@ -4,6 +4,18 @@ project(opencvOCR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# add_compile_options(-Wno-deprecated-declarations)
+
+# ensure LLVM_DIR is set
+macro(add_llvm_support)
+  set(llvm_components core support irreader)  
+  llvm_map_components_to_libnames(llvm_libs ${llvm_components})
+  message(STATUS "Linking LLVM libs to targets: ${ARGN}")
+  foreach(target ${ARGN})
+    target_link_libraries(${target} PUBLIC ${llvm_libs})
+  endforeach()
+endmacro()
+
 
 include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -27,10 +39,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=address")
 endif()
 
+find_package(LLVM REQUIRED CONFIG)
 find_package(OpenSSL REQUIRED)
 find_package(OpenMP)
 find_package(Folly CONFIG REQUIRED)
 find_package(gflags CONFIG REQUIRED)
+
 
 find_package(Tesseract QUIET)
 if (NOT Tesseract_FOUND)
@@ -44,6 +58,7 @@ if (NOT Leptonica_FOUND)
     pkg_check_modules(Leptonica REQUIRED IMPORTED_TARGET lept)
 endif()
 
+
 # gtest
 include(FetchContent)
 FetchContent_Declare(
@@ -53,7 +68,6 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # windows setting
 FetchContent_MakeAvailable(googletest)
-
 
 add_executable(
  main
@@ -65,7 +79,7 @@ target_link_libraries(main
   PUBLIC Folly::folly
   PUBLIC OpenSSL::Crypto
   PUBLIC PkgConfig::Tesseract 
-  PUBLIC PkgConfig::Leptonica 
+  PUBLIC PkgConfig::Leptonica
 )
 
 if(OpenMP_CXX_FOUND)
@@ -73,8 +87,8 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(main PUBLIC OpenMP::OpenMP_CXX)
 else()
     message(STATUS "OpenMP not found")
-
 endif()
+
 
 if (BENCHMARK)
     add_executable(cache_benchmark benchmarks/cache_benchmark.cc)
@@ -118,3 +132,7 @@ foreach(TEST_EXECUTABLE IN LISTS TEST_EXECUTABLES)
     gtest_discover_tests(${TEST_EXECUTABLE})
 
 endforeach()
+
+
+add_llvm_support(main ${TEST_EXECUTABLES})
+

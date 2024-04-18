@@ -12,10 +12,10 @@ struct Image {
 
     std::string image_sha256;
     std::string path;
-    std::size_t image_size;
+    std::size_t image_size{};
     std::string content_fuzzhash;
     std::string text_content;
-    std::size_t text_size;
+    std::size_t text_size{};
     std::string time_processed;
     WriteMetadata write_info;
 
@@ -37,7 +37,7 @@ struct Image {
     }
 
     // Function to read write metadata
-    WriteMetadata readWriteMetadata() {
+    auto readWriteMetadata() const -> WriteMetadata {
         if (!mutex) {
             return write_info;   // If mutex is not initialized, no write has
                                  // occurred

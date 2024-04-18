@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <curl/curl.h>
 #include <fstream>
@@ -26,7 +25,6 @@ class MyTestSuite : public ::testing::Test {
     const std::vector<std::string> images = {"screenshot.png", "imgtext.jpeg",
                                              "compleximgtext.png",
                                              "scatteredtext.png"};
-    imgstr::ImgProcessor imageTranslator = imgstr::ImgProcessor();
 
   protected:
     void TearDown() override {
@@ -48,6 +46,7 @@ TEST_F(MyTestSuite, EnvironmentTest) {
 TEST_F(MyTestSuite, ConvertImageToTextFile) {
     std::cout << "Running Convert Test" << std::endl;
 
+    imgstr::ImgProcessor imageTranslator;
     imageTranslator.convertImageToTextFile(inputFile, tempDir);
 
     bool fileExists = std::filesystem::exists(tempDir + "/" + "imgtext.txt");
@@ -59,7 +58,7 @@ TEST_F(MyTestSuite, WriteFileTest) {
     std::vector<std::string> paths;
     std::transform(images.begin(), images.end(), std::back_inserter(paths),
                    [&](const std::string &img) { return path + img; });
-
+    imgstr::ImgProcessor imageTranslator;
     EXPECT_NO_THROW(imageTranslator.addFiles(paths));
     EXPECT_NO_THROW(imageTranslator.convertImagesToTextFiles(tempDir));
 
@@ -78,8 +77,9 @@ TEST_F(MyTestSuite, WriteFileTest) {
 
         int lineCount = 0;
         std::string line;
-        while (std::getline(outputFile, line))
+        while (std::getline(outputFile, line)) {
             lineCount++;
+        }
 
         outputFile.close();
         EXPECT_GE(lineCount, test_lengths[i]);
@@ -89,13 +89,12 @@ TEST_F(MyTestSuite, WriteFileTest) {
 TEST_F(MyTestSuite, BasicAssertions) {
     tesseract::TessBaseAPI ocr;
 
-    for (int i = static_cast<int>(imgstr::ISOLang::en);
-         i <= static_cast<int>(imgstr::ISOLang::de); ++i) {
-        imgstr::ISOLang lang = static_cast<imgstr::ISOLang>(i);
-        const char *langStr = isoToTesseractLang(lang);
-
-        EXPECT_NO_THROW((ocr.Init(nullptr, langStr)));
-    }
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::eng)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::hin)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::chi)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::ger)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::fra)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::esp)));
 
     try {
         ocr.Init(nullptr, "nonexistent");
@@ -117,12 +116,13 @@ TEST_F(MyTestSuite, BasicAssertions) {
     EXPECT_EQ(7 * 6, 42);
 }
 
-std::string
+auto
 extractTextFromImageFileLeptonica(const std::string &file_path,
-                                  const std::string &lang = "eng") {
+                                  const std::string &lang = "eng")
+    -> std::string {
 
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-    if (api->Init(NULL, "eng")) {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng") != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
         exit(1);
     }
@@ -142,11 +142,12 @@ extractTextFromImageFileLeptonica(const std::string &file_path,
     return outText;
 }
 
-std::string
-extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") {
+auto
+extractTextLSTM(const std::string &file_path,
+                const std::string &lang = "eng") -> std::string {
 
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-    if (api->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY)) {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
         exit(1);
     }
@@ -169,16 +170,16 @@ TEST_F(MyTestSuite, OEMvsLSTMAnalysis) {
 
     std::cout << res1 << '\n';
 
-    auto t1 = imgstr::getDuration(start);
-    std::cout << "Time Leptonica : " << t1 << '\n';
+    auto time1 = imgstr::getDuration(start);
+    std::cout << "Time Leptonica : " << time1 << '\n';
 
-    auto s2 = imgstr::getStartTime();
+    auto start2 = imgstr::getStartTime();
     auto res2 = extractTextLSTM(inputOpenTest);
 
     std::cout << res2 << '\n';
 
-    auto t2 = imgstr::getDuration(start);
-    std::cout << "Time LSTM: " << t2 << '\n';
+    auto time2 = imgstr::getDuration(start);
+    std::cout << "Time LSTM: " << time2 << '\n';
 }
 
 #ifdef _USE_OPENCV
@@ -229,8 +230,8 @@ TEST_F(MyTestSuite, LEPTONICA_VS_OPENCV) {
 
 #endif
 
-int
-main(int argc, char **argv) {
+auto
+main(int argc, char **argv) -> int {
     ::testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

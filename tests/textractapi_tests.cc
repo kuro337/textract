@@ -17,7 +17,7 @@ class PublicAPITests : public ::testing::Test {
     const std::string outputDirWrite = "tmpapi";
     const std::string diroutputTest = "tmpdir";
 
-    imgstr::ImgProcessor app = imgstr::ImgProcessor();
+    imgstr::ImgProcessor app;
 
   protected:
     void SetUp() override {}
@@ -126,4 +126,6 @@ TEST_F(PublicAPITests, AddImagesThenConvertToTextImageMode) {
     app.addFiles(images);
 
     EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
+
+    app.getResults();
 };

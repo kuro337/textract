@@ -25,8 +25,8 @@ class ThreadLocalTestSuite : public ::testing::Test {
     }
 };
 
-inline std::vector<unsigned char>
-readBytesFromFile(const std::string &filename) {
+inline auto
+readBytesFromFile(const std::string &filename) -> std::vector<unsigned char> {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
     if (!file) {
         throw std::runtime_error("Failed to open file: " + filename);
@@ -40,15 +40,16 @@ readBytesFromFile(const std::string &filename) {
     return buffer;
 }
 
-std::string
+auto
 getTextOCR(tesseract::TessBaseAPI *ocr,
            const std::vector<unsigned char> &file_content,
-           const std::string &lang) {
+           const std::string &lang) -> std::string {
     Pix *image =
         pixReadMem(reinterpret_cast<const l_uint8 *>(file_content.data()),
                    file_content.size());
-    if (!image)
+    if (image == nullptr) {
         throw std::runtime_error("Failed to load image from memory buffer");
+    }
 
     ocr->SetImage(image);
     std::string outText(ocr->GetUTF8Text());
@@ -70,9 +71,19 @@ struct TessBaseAPIWrapper {
         }
     }
 
+    TessBaseAPIWrapper(const TessBaseAPIWrapper &) = default;
+    TessBaseAPIWrapper(TessBaseAPIWrapper &&) = delete;
+
+    auto
+    operator=(const TessBaseAPIWrapper &) -> TessBaseAPIWrapper & = default;
+
+    auto operator=(TessBaseAPIWrapper &&) -> TessBaseAPIWrapper & = delete;
+
+    explicit TessBaseAPIWrapper(tesseract::TessBaseAPI *ocrPtr)
+        : ocrPtr(ocrPtr) {}
     ~TessBaseAPIWrapper() {
         // std::cout << "DESTROYING OCR INSTANCE" << '\n';
-        if (ocrPtr) {
+        if (ocrPtr != nullptr) {
 
             ocrPtr->Clear();
             ocrPtr->End();
@@ -80,11 +91,11 @@ struct TessBaseAPIWrapper {
         }
     }
 
-    tesseract::TessBaseAPI *operator->() const { return ocrPtr; }
+    auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
 };
 
-tesseract::TessBaseAPI *
-getThreadLocalOCR(const std::string &lang = "eng") {
+auto
+getThreadLocalOCR(const std::string &lang = "eng") -> tesseract::TessBaseAPI * {
     thread_local static TessBaseAPIWrapper ocrWrapper(lang);
     return ocrWrapper.ocrPtr;
 }
@@ -93,7 +104,7 @@ void
 processImage(const std::vector<unsigned char> &file_content,
              const std::string &lang) {
     try {
-        auto ocr =
+        auto *ocr =
             getThreadLocalOCR(lang);   // Get the thread-local OCR instance
 
         std::string text = getTextOCR(ocr, file_content, lang);
@@ -124,12 +135,18 @@ TEST_F(ThreadLocalTestSuite, ProcessMultipleImages) {
 /* OPENMP PARALLELISM TESSERAT */
 
 struct TessBaseAPIWrapperOpenMP {
-    tesseract::TessBaseAPI *ocrPtr;
+    tesseract::TessBaseAPI *ocrPtr{};
 
-    TessBaseAPIWrapperOpenMP() : ocrPtr(nullptr) {}
+    TessBaseAPIWrapperOpenMP() = default;
 
+    TessBaseAPIWrapperOpenMP(const TessBaseAPIWrapperOpenMP &) = default;
+    TessBaseAPIWrapperOpenMP(TessBaseAPIWrapperOpenMP &&) = delete;
+    auto operator=(const TessBaseAPIWrapperOpenMP &)
+        -> TessBaseAPIWrapperOpenMP & = default;
+    auto operator=(TessBaseAPIWrapperOpenMP &&) -> TessBaseAPIWrapperOpenMP & =
+                                                       delete;
     void init(const std::string &lang = "eng") {
-        if (!ocrPtr) {
+        if (ocrPtr == nullptr) {
             ocrPtr = new tesseract::TessBaseAPI();
             if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
                 delete ocrPtr;
@@ -140,7 +157,7 @@ struct TessBaseAPIWrapperOpenMP {
     }
 
     ~TessBaseAPIWrapperOpenMP() {
-        if (ocrPtr) {
+        if (ocrPtr != nullptr) {
             // std::cout << "Freed Tesserat Memory" << std::endl;
             ocrPtr->Clear();
             ocrPtr->End();
@@ -148,7 +165,7 @@ struct TessBaseAPIWrapperOpenMP {
         }
     }
 
-    tesseract::TessBaseAPI *operator->() const { return ocrPtr; }
+    auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
 };
 
 static TessBaseAPIWrapperOpenMP globalOcrWrapperOpenMP;
@@ -158,7 +175,7 @@ void
 processImageOpenMP(const std::vector<unsigned char> &file_content,
                    const std::string &lang) {
     try {
-        if (!globalOcrWrapperOpenMP.ocrPtr) {
+        if (globalOcrWrapperOpenMP.ocrPtr == nullptr) {
             // std::cout   << "***\nnew instance tesserat\n***"<< std::endl;
             globalOcrWrapperOpenMP.init(lang);
         }
@@ -182,7 +199,7 @@ TEST_F(ThreadLocalTestSuite, ProcessMultipleImagesOpenMP) {
             EXPECT_NO_THROW(processImageOpenMP(content, "eng"));
         }
 
-        if (globalOcrWrapperOpenMP.ocrPtr) {
+        if (globalOcrWrapperOpenMP.ocrPtr != nullptr) {
             globalOcrWrapperOpenMP.~TessBaseAPIWrapperOpenMP();
             globalOcrWrapperOpenMP.ocrPtr = nullptr;
         }
@@ -195,7 +212,7 @@ cleanUpOpenMPTesserat() {
     omp_set_num_threads(numThreads);
 #pragma omp parallel
     {
-        if (globalOcrWrapperOpenMP.ocrPtr) {
+        if (globalOcrWrapperOpenMP.ocrPtr != nullptr) {
             globalOcrWrapperOpenMP.~TessBaseAPIWrapperOpenMP();
             globalOcrWrapperOpenMP.ocrPtr = nullptr;
         }
@@ -207,9 +224,9 @@ TEST_F(ThreadLocalTestSuite, MultipleFilesDivide) {
     omp_set_num_threads(numThreads);
 
 #pragma omp parallel for
-    for (int i = 0; i < images.size(); ++i) {
+    for (const auto &image : images) {
 
-        std::string fullFilePath = path + images[i];
+        std::string fullFilePath = path + image;
 
         auto content = readBytesFromFile(fullFilePath);
 
@@ -219,8 +236,8 @@ TEST_F(ThreadLocalTestSuite, MultipleFilesDivide) {
     EXPECT_NO_THROW(cleanUpOpenMPTesserat());
 }
 
-int
-main(int argc, char **argv) {
+auto
+main(int argc, char **argv) -> int {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
