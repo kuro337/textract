@@ -6,6 +6,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # add_compile_options(-Wno-deprecated-declarations)
 
+# Creates header file with path to images folder
+# set(IMAGE_FOLDER_PATH "images")
+# configure_file(
+#   "${CMAKE_CURRENT_SOURCE_DIR}/image_folder_path.h.in"
+#   "${CMAKE_CURRENT_BINARY_DIR}/image_folder_path.h"
+#   @ONLY
+# )
+
 # ensure LLVM_DIR is set
 macro(add_llvm_support)
   set(llvm_components core support irreader)  
@@ -16,6 +24,7 @@ macro(add_llvm_support)
   endforeach()
 endmacro()
 
+# include_directories(${CMAKE_SOURCE_DIR}/src)
 
 include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -105,10 +114,13 @@ endif()
 
 enable_testing()
 
-set(TEST_EXECUTABLES tesseractparallel_test bulk_test pdf_test textractapi_tests ocr_test atomic_test similarity_test threadlocal_test)
+set(TEST_EXECUTABLES fs_test
+                     tesseractparallel_test bulk_test pdf_test 
+                     textractapi_tests ocr_test atomic_test similarity_test 
+                     threadlocal_test)
 
 foreach(TEST_EXECUTABLE IN LISTS TEST_EXECUTABLES)
-    add_executable(${TEST_EXECUTABLE} tests/${TEST_EXECUTABLE}.cc)
+    add_executable(${TEST_EXECUTABLE} tests/${TEST_EXECUTABLE}.cc  src/fs.cc)
     set_target_properties(${TEST_EXECUTABLE} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     )

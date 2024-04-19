@@ -76,8 +76,10 @@ namespace imgstr {
         static constexpr auto WARNING        = "\x1b[93m";
         static constexpr auto WARNING_BOLD   = "\x1b[1;33m";
         static constexpr auto END            = "\x1b[0m";
-        static constexpr auto DELIMITER_STAR = "\x1b[90m******************************************************\x1b[";
-        static constexpr auto DELIMITER_DIM  = "\x1b[90m******************************************************\x1b[";
+        static constexpr auto DELIMITER_STAR = "\x1b[90m******************************************************"
+                                               "\x1b[";
+        static constexpr auto DELIMITER_DIM  = "\x1b[90m******************************************************"
+                                               "\x1b[";
         static constexpr auto DELIMITER_ITEM = "--------------------------------------------------------------";
     } // namespace Ansi
 
@@ -104,7 +106,9 @@ namespace imgstr {
 
     auto createDirIfNotExists(const std::string &output_dir, char path_separator = SEPARATOR) -> bool;
 
-    auto createQualifiedFilePath(const std::string &fileName, const std::string &directory, char path_separator = SEPARATOR) -> std::string;
+    auto createQualifiedFilePath(const std::string &fileName,
+                                 const std::string &directory,
+                                 char               path_separator = SEPARATOR) -> std::string;
 
     auto getFilePaths(const llvm::Twine &directoryPath) -> std::vector<std::string>;
 
@@ -139,7 +143,9 @@ namespace imgstr {
 
     enum class ImgMode { document, image };
 
-    auto getTextOCR(const std::vector<unsigned char> &file_content, const std::string &lang, ImgMode img_mode) -> std::string;
+    auto getTextOCR(const std::vector<unsigned char> &file_content,
+                    const std::string                &lang,
+                    ImgMode                           img_mode) -> std::string;
 
     auto getTextImgFile(const std::string &file_path, const std::string &lang = "eng") -> std::string;
 
@@ -149,7 +155,9 @@ namespace imgstr {
 
     void createPDF(const std::string &input_path, const std::string &output_path, const char *datapath = DATAPATH);
 
-    auto getTextOCRNoClear(const std::vector<unsigned char> &file_content, const std::string &lang = "eng", ImgMode img_mode = ImgMode::document) -> std::string;
+    auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
+                           const std::string                &lang     = "eng",
+                           ImgMode                           img_mode = ImgMode::document) -> std::string;
 
 #ifdef _USE_OPENCV
 
@@ -288,7 +296,8 @@ namespace imgstr {
                         if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
                             delete ocrPtr;
                             ocrPtr = nullptr;
-                            throw std::runtime_error("Could not initialize tesseract.");
+                            throw std::runtime_error("Could not initialize "
+                                                     "tesseract.");
                     }
                         if (mode == ImgMode::image) { /* Optimized for Complex Images */
                             sout << "Image mode set\n";
@@ -338,8 +347,8 @@ namespace imgstr {
 
     Cache retrieval logic is determined by the SHA256 hash of the Image bytes
 
-    The SHA256 Byte Hash enables duplicate images to not be processed even if the
-    file names or paths differ.
+    The SHA256 Byte Hash enables duplicate images to not be processed even if
+    the file names or paths differ.
 
     */
 
@@ -374,7 +383,9 @@ namespace imgstr {
             time_processed(getCurrentTimestamp()) {
         }
 
-        void updateWriteInfo(const std::string &output_path, const std::string &write_timestamp, bool output_written) const {
+        void updateWriteInfo(const std::string &output_path,
+                             const std::string &write_timestamp,
+                             bool               output_written) const {
                 if (!mutex) {
                     mutex = std::make_unique<folly::SharedMutex>();
             }
@@ -458,7 +469,8 @@ namespace imgstr {
             }
         }
 
-        auto getImageOrProcess(const std::string &file_path, ISOLang lang = ISOLang::en) -> std::optional<std::reference_wrapper<const Image>> {
+        auto getImageOrProcess(const std::string &file_path,
+                               ISOLang lang = ISOLang::en) -> std::optional<std::reference_wrapper<const Image>> {
             return processImageFile(file_path);
         }
 
@@ -504,7 +516,8 @@ namespace imgstr {
             double newTime = 0.0;
                 do {
                     newTime = current + timeToAdd;
-            } while (!totalTime.compare_exchange_weak(current, newTime, std::memory_order_relaxed, std::memory_order_relaxed));
+            } while (!totalTime.compare_exchange_weak(
+                current, newTime, std::memory_order_relaxed, std::memory_order_relaxed));
         }
 
         auto getAverageProcessingTime() -> double {
@@ -517,7 +530,8 @@ namespace imgstr {
 #endif
 
             logger->log() << "Processor Initialized" << '\n'
-                          << "Threads Available: " << BOLD_WHITE << omp_get_max_threads() << END << "\nCores Available: " << BOLD_WHITE << omp_get_num_procs() << END << '\n';
+                          << "Threads Available: " << BOLD_WHITE << omp_get_max_threads() << END
+                          << "\nCores Available: " << BOLD_WHITE << omp_get_num_procs() << END << '\n';
         }
 
         void printCacheHit(const std::string &file) {
@@ -529,7 +543,9 @@ namespace imgstr {
         }
 
         void printInputFileAlreadyProcessed(const std::string &file) {
-            logger->log() << DELIMITER_STAR << '\n' << WARNING << "File at path : " << END << file << "has already been processed to text" << '\n';
+            logger->log() << DELIMITER_STAR << '\n'
+                          << WARNING << "File at path : " << END << file << "has already been processed to text"
+                          << '\n';
         }
 
         void fileOpenErrorLog(const std::string &output_path) {
@@ -537,7 +553,9 @@ namespace imgstr {
         }
 
         void overWriteLog(const std::string &output_path) {
-            logger->log() << WARNING_BOLD << "WARNING:  " << END << WARNING << "File already exists - " << END << BOLD_WHITE << output_path << END << "    Are you sure you want to overwrite the file?" << '\n';
+            logger->log() << WARNING_BOLD << "WARNING:  " << END << WARNING << "File already exists - " << END
+                          << BOLD_WHITE << output_path << END << "    Are you sure you want to overwrite the file?"
+                          << '\n';
         }
 
         void filesAlreadyProcessedLog() {
@@ -546,8 +564,8 @@ namespace imgstr {
 
         void printOutputAlreadyWritten(const Image &image) {
             logger->log() << DELIMITER_STAR << '\n'
-                          << WARNING << image.getName() << " Already Processed and written to " << END << image.write_info.output_path << " at "
-                          << image.write_info.write_timestamp << '\n';
+                          << WARNING << image.getName() << " Already Processed and written to " << END
+                          << image.write_info.output_path << " at " << image.write_info.write_timestamp << '\n';
         }
 
         void printProcessingFile(const std::string &file) {
@@ -556,7 +574,8 @@ namespace imgstr {
 
         void printProcessingDuration(double duration_ms) {
             logger->log() << DELIMITER_STAR << '\n'
-                          << BOLD_WHITE << queued.size() << END << " Files Processed and Converted in " << BRIGHT_WHITE << duration_ms << " seconds\n"
+                          << BOLD_WHITE << queued.size() << END << " Files Processed and Converted in " << BRIGHT_WHITE
+                          << duration_ms << " seconds\n"
                           << END << DELIMITER_STAR << "\n";
         }
 
@@ -582,18 +601,35 @@ namespace imgstr {
                                           "{3}Output Written:  {1}{9}\n"
                                           "{3}Write Timestamp: {1}{10}\n"
                                           "{11}\n",
-                                          Ansi::GREEN_BOLD, Ansi::END, img.image_sha256, Ansi::BLUE, img.path, img.image_size, img.text_size, img.time_processed,
-                                          img.write_info.output_path, (img.write_info.output_written ? "Yes" : "No"), img.write_info.write_timestamp, Ansi::DELIMITER_ITEM)
+                                          Ansi::GREEN_BOLD,
+                                          Ansi::END,
+                                          img.image_sha256,
+                                          Ansi::BLUE,
+                                          img.path,
+                                          img.image_size,
+                                          img.text_size,
+                                          img.time_processed,
+                                          img.write_info.output_path,
+                                          (img.write_info.output_written ? "Yes" : "No"),
+                                          img.write_info.write_timestamp,
+                                          Ansi::DELIMITER_ITEM)
                                 .str();
 
-                    logstream << GREEN_BOLD << std::left << std::setw(width) << "SHA256: " << END << img.image_sha256 << '\n'
+                    logstream << GREEN_BOLD << std::left << std::setw(width) << "SHA256: " << END << img.image_sha256
+                              << '\n'
                               << BLUE << std::left << std::setw(width) << "Path: " << END << img.path << '\n'
-                              << BLUE << std::left << std::setw(width) << "Image Size: " << END << img.image_size << " bytes\n"
-                              << BLUE << std::left << std::setw(width) << "Text Size: " << END << img.text_size << " bytes\n"
-                              << BLUE << std::left << std::setw(width) << "Processed Time: " << END << img.time_processed << '\n'
-                              << BLUE << std::left << std::setw(width) << "Output Path: " << END << img.write_info.output_path << '\n'
-                              << BLUE << std::left << std::setw(width) << "Output Written: " << END << (img.write_info.output_written ? "Yes" : "No") << '\n'
-                              << BLUE << std::left << std::setw(width) << "Write Timestamp: " << END << img.write_info.write_timestamp << '\n'
+                              << BLUE << std::left << std::setw(width) << "Image Size: " << END << img.image_size
+                              << " bytes\n"
+                              << BLUE << std::left << std::setw(width) << "Text Size: " << END << img.text_size
+                              << " bytes\n"
+                              << BLUE << std::left << std::setw(width) << "Processed Time: " << END
+                              << img.time_processed << '\n'
+                              << BLUE << std::left << std::setw(width) << "Output Path: " << END
+                              << img.write_info.output_path << '\n'
+                              << BLUE << std::left << std::setw(width) << "Output Written: " << END
+                              << (img.write_info.output_written ? "Yes" : "No") << '\n'
+                              << BLUE << std::left << std::setw(width) << "Write Timestamp: " << END
+                              << img.write_info.write_timestamp << '\n'
                               << DELIMITER_ITEM << '\n';
                 }
 
@@ -601,8 +637,10 @@ namespace imgstr {
         }
 
         void destructionLog() {
-            logger->log() << LIGHT_GREY << "Destructor called - freeing " << BRIGHT_WHITE << imgstr::TesseractThreadCount.load(std::memory_order_relaxed) << END << " Tesseracts\n"
-                          << END << "\nAverage Image Processing Latency: " << BOLD_WHITE << getAverageProcessingTime() << END << " ms\n"
+            logger->log() << LIGHT_GREY << "Destructor called - freeing " << BRIGHT_WHITE
+                          << imgstr::TesseractThreadCount.load(std::memory_order_relaxed) << END << " Tesseracts\n"
+                          << END << "\nAverage Image Processing Latency: " << BOLD_WHITE << getAverageProcessingTime()
+                          << END << " ms\n"
                           << '\n'
                           <<
 
@@ -646,7 +684,9 @@ namespace imgstr {
             return std::nullopt;
         }
 
-        void processImagesDir(const std::string &directory, bool write_output = false, const std::string &output_path = "") {
+        void processImagesDir(const std::string &directory,
+                              bool               write_output = false,
+                              const std::string &output_path  = "") {
             auto files = getFilePaths(directory);
 
                 for (const auto &filePath: files) {
@@ -692,10 +732,23 @@ namespace imgstr {
             outFile << content;
         }
 
-        void convertImageToTextFile(const std::string &input_file, const std::string &output_dir = "", ISOLang lang = ISOLang::en) {
+        /**
+         * @brief Converts an image file to a text file.
+         *
+         * @param input_file The input image file.
+         * @param output_dir The output directory (optional).
+         * @param lang The language of the text (optional, default: en).
+         * @return void
+         * @usage convertImageToTextFile("image.jpg", "output_dir", ISOLang::en);
+         */
+        void convertImageToTextFile(const std::string &input_file,
+                                    const std::string &output_dir = "",
+                                    ISOLang            lang       = ISOLang::en) {
             createDirIfNotExists(output_dir);
 
             std::string output_file = createQualifiedFilePath(input_file, output_dir);
+
+            logger->log() << "Output file : " << output_file << '\n';
 
             auto imageOpt = getImageOrProcess(input_file, lang);
 
@@ -745,7 +798,9 @@ namespace imgstr {
             queued.clear();
         }
 
-        void generatePDF(const std::string &input_path, const std::string &output_path, const char *datapath = DATAPATH) {
+        void generatePDF(const std::string &input_path,
+                         const std::string &output_path,
+                         const char        *datapath = DATAPATH) {
                 try {
                     createPDF(input_path, output_path);
 
@@ -904,10 +959,13 @@ namespace imgstr {
     }
 
     inline void tesseractInvokeLog(ImgMode img_mode) {
-        serr << ERROR << "getTextOCR " << (img_mode == ImgMode::document ? "document mode " : "image mode ") << END << " -> called from thread: " << omp_get_thread_num() << '\n';
+        serr << ERROR << "getTextOCR " << (img_mode == ImgMode::document ? "document mode " : "image mode ") << END
+             << " -> called from thread: " << omp_get_thread_num() << '\n';
     }
 
-    inline auto getTextOCR(const std::vector<unsigned char> &file_content, const std::string &lang, ImgMode img_mode = ImgMode::document) -> std::string {
+    inline auto getTextOCR(const std::vector<unsigned char> &file_content,
+                           const std::string                &lang,
+                           ImgMode                           img_mode = ImgMode::document) -> std::string {
         /* Leptonica reads 40% or more faster than OpenCV */
 
 #ifdef _DEBUGAPP
@@ -919,7 +977,8 @@ namespace imgstr {
         }
         Pix *image = pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
             if (image == nullptr) {
-                throw std::runtime_error("Failed to load image from memory buffer");
+                throw std::runtime_error("Failed to load image from memory "
+                                         "buffer");
         }
 
         thread_local_tesserat->SetImage(image);
@@ -956,13 +1015,16 @@ namespace imgstr {
         delete renderer;
     }
 
-    inline auto getTextOCRNoClear(const std::vector<unsigned char> &file_content, const std::string &lang, ImgMode img_mode) -> std::string {
+    inline auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
+                                  const std::string                &lang,
+                                  ImgMode                           img_mode) -> std::string {
             if (thread_local_tesserat.ocrPtr == nullptr) {
                 thread_local_tesserat.init(lang, img_mode);
         }
         Pix *image = pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
             if (image == nullptr) {
-                throw std::runtime_error("Failed to load image from memory buffer");
+                throw std::runtime_error("Failed to load image from memory "
+                                         "buffer");
         }
 
         thread_local_tesserat->SetImage(image);
@@ -1023,7 +1085,8 @@ namespace imgstr {
         return outText;
     };
 
-    inline std::string extractTextFromImageBytes(const std::vector<uchar> &file_content, const std::string &lang = "eng") {
+    inline std::string
+        extractTextFromImageBytes(const std::vector<uchar> &file_content, const std::string &lang = "eng") {
         cv::Mat img = cv::imdecode(file_content, cv::IMREAD_COLOR);
             if (img.empty()) {
                 throw std::runtime_error("Failed to load image from buffer");
@@ -1076,8 +1139,17 @@ namespace imgstr {
 
 #pragma endregion
 
+//
 #pragma region FILE_IO_IMPL               /* STL File I/O Implementations */
 
+    /**
+     * @brief Create Dir If Not Exists
+     *
+     * @param output_dir
+     * @param path_separator
+     * @return true
+     * @usage createDirIfNotExists("path/to/file", '/)
+     */
     inline auto createDirIfNotExists(const std::string &output_dir, const char path_separator) -> bool {
             if (!output_dir.empty() && !fileExists(output_dir)) {
                 return createDirectories(output_dir);
@@ -1085,7 +1157,17 @@ namespace imgstr {
         return true;
     }
 
-    inline auto createQualifiedFilePath(const std::string &fileName, const std::string &directory, const char path_separator) -> std::string {
+    /**
+     * @brief Create a Qualified File Path object
+     *
+     * @param fileName
+     * @param directory
+     * @param path_separator
+     * @return std::string
+     */
+    inline auto createQualifiedFilePath(const std::string &fileName,
+                                        const std::string &directory,
+                                        const char         path_separator) -> std::string {
             if (!directory.empty() && !fileExists(directory) && !createDirectories(directory)) {
                 throw std::runtime_error("Failed to Create Directory at: " + directory);
         }

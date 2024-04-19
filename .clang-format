@@ -1,6 +1,8 @@
 # options: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+# clang-format -i <filename> to run in place - and validate Config
 BasedOnStyle: LLVM
 IndentWidth: 4
+ColumnLimit: 120
 SpaceAfterCStyleCast: true
 UseTab: Never
 AlignTrailingComments: true
@@ -8,6 +10,8 @@ AlignConsecutiveMacros: Consecutive
 AlignConsecutiveBitFields: true
 UseCRLF: false
 AlignAfterOpenBracket: Align
+BinPackArguments: false # false -> if fn call args exceed will be on newlines each
+BinPackParameters: false # false -> if params exceed theyll be on newlines each
 BreakBeforeBraces: Custom
 SpaceBeforeParens: ControlStatements
 PointerAlignment: Right
@@ -42,8 +46,9 @@ AllowShortLambdasOnASingleLine: None
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: true
-BinPackParameters: true
+
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllArgumentsOnNextLine: true
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
@@ -56,22 +61,25 @@ BraceWrapping:
   AfterUnion: false
   BeforeCatch: false
   BeforeElse: false
-  IndentBraces: true
   SplitEmptyFunction: true
   SplitEmptyNamespace: true
   SplitEmptyRecord: true
+  # IndentBraces: true indents if statements to be non aligned within the body
+
 BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: false
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: AfterColon
 BreakStringLiterals: true
-ColumnLimit: 160
+
+### Nests Namespaces  namespace Foo { namespace Bar {
 CompactNamespaces: true
+
 Cpp11BracedListStyle: true
-DeriveLineEnding: false
-DerivePointerAlignment: false
-FixNamespaceComments: true
-IncludeBlocks: Merge
+# LineEnding: LF # line ending style : \n or \r\n
+DerivePointerAlignment: false ## analyze for most common alignment of & and * and override PointerAlignment if diff
+FixNamespaceComments: true # adds namespace comments such as // naemspace a
+IncludeBlocks: Merge # sort and merge imports
 IndentCaseLabels: true
 IndentPPDirectives: None
 IndentWrappedFunctionNames: true
@@ -79,8 +87,8 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 PenaltyBreakAssignment: 16
-PenaltyBreakBeforeFirstCallParameter: 2
-PenaltyBreakString: 64
-PenaltyExcessCharacter: 0
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakString: 64 # sets extra allowed cols before strings are broken onto newlines
+# PenaltyExcessCharacter: 0 # sets penalty for chars once exceeding Col Limit
 PenaltyReturnTypeOnItsOwnLine: 0
 ReflowComments: true
