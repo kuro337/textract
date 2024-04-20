@@ -1,21 +1,22 @@
 #include <gtest/gtest.h>
+#include <src/fs.h>
 #include <string>
 #include <textract.h>
 #include <vector>
-
-class PublicAPITests : public ::testing::Test {
+class PublicAPITests: public ::testing::Test {
   public:
     const std::string inputFile = "../../images/imgtext.jpeg";
 
     const std::string outputInNewFolderInInputImages = "../../images/processed";
 
-    const std::string path = "../../images/";
-    const std::vector<std::string> images = {
-        path + "screenshot.png", path + "imgtext.jpeg",
-        path + "compleximgtext.png", path + "scatteredtext.png"};
+    const std::string              path   = "../../images/";
+    const std::vector<std::string> images = {path + "screenshot.png",
+                                             path + "imgtext.jpeg",
+                                             path + "compleximgtext.png",
+                                             path + "scatteredtext.png"};
 
     const std::string outputDirWrite = "tmpapi";
-    const std::string diroutputTest = "tmpdir";
+    const std::string diroutputTest  = "tmpdir";
 
     imgstr::ImgProcessor app;
 
@@ -23,7 +24,6 @@ class PublicAPITests : public ::testing::Test {
     void SetUp() override {}
 
     void TearDown() override {
-
         std::filesystem::remove_all(outputDirWrite);
         std::filesystem::remove_all(diroutputTest);
         std::filesystem::remove_all(outputInNewFolderInInputImages);
@@ -33,7 +33,6 @@ class PublicAPITests : public ::testing::Test {
 /* All Tests Passed Memory Sanitization ASan */
 
 TEST_F(PublicAPITests, GetTextFromOneImage) {
-
     auto text = app.getImageText(inputFile);
     ASSERT_TRUE(text.has_value());
     EXPECT_EQ("HAWAII\n", text.value());
@@ -91,14 +90,11 @@ execution times for different tasks or iterations within the 'Simple' and
 */
 
 TEST_F(PublicAPITests, ProcessSimpleDir) {
-
     EXPECT_NO_THROW(app.simpleProcessDir(path, outputDirWrite););
 }
 
 TEST_F(PublicAPITests, ProcessFilesFromDir) {
-
-    EXPECT_NO_THROW(
-        app.processImagesDir(path, true, outputInNewFolderInInputImages));
+    EXPECT_NO_THROW(app.processImagesDir(path, true, outputInNewFolderInInputImages));
 }
 
 TEST_F(PublicAPITests, Results) { EXPECT_NO_THROW(app.getResults()); }
@@ -113,14 +109,12 @@ ImgMode::image sets : ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
 */
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextDocumentMode) {
-
     app.addFiles(images);
 
     EXPECT_NO_THROW(app.convertImagesToTextFiles(outputDirWrite));
 };
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextImageMode) {
-
     app.setImageMode(imgstr::ImgMode::image);
 
     app.addFiles(images);

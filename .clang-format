@@ -2,7 +2,7 @@
 # clang-format -i <filename> to run in place - and validate Config
 BasedOnStyle: LLVM
 IndentWidth: 4
-ColumnLimit: 120
+ColumnLimit: 100
 SpaceAfterCStyleCast: true
 UseTab: Never
 AlignTrailingComments: true
@@ -40,13 +40,12 @@ SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 TabWidth: 4
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: All # allows (All,Empty)Constructor {} to be on same line and short funcs
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: None
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
-
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowAllArgumentsOnNextLine: true
 BraceWrapping:
@@ -61,22 +60,16 @@ BraceWrapping:
   AfterUnion: false
   BeforeCatch: false
   BeforeElse: false
-  SplitEmptyFunction: true
+  SplitEmptyFunction: false
   SplitEmptyNamespace: true
   SplitEmptyRecord: true
-  # IndentBraces: true indents if statements to be non aligned within the body
-
 BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: false
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: AfterColon
 BreakStringLiterals: true
-
-### Nests Namespaces  namespace Foo { namespace Bar {
-CompactNamespaces: true
-
+CompactNamespaces: true ### Nests Namespaces  namespace Foo { namespace Bar {
 Cpp11BracedListStyle: true
-# LineEnding: LF # line ending style : \n or \r\n
 DerivePointerAlignment: false ## analyze for most common alignment of & and * and override PointerAlignment if diff
 FixNamespaceComments: true # adds namespace comments such as // naemspace a
 IncludeBlocks: Merge # sort and merge imports
@@ -89,6 +82,14 @@ NamespaceIndentation: All
 PenaltyBreakAssignment: 16
 PenaltyBreakBeforeFirstCallParameter: 0
 PenaltyBreakString: 64 # sets extra allowed cols before strings are broken onto newlines
-# PenaltyExcessCharacter: 0 # sets penalty for chars once exceeding Col Limit
 PenaltyReturnTypeOnItsOwnLine: 0
 ReflowComments: true
+# Disabled Settings
+# BreakAfterReturnType: Automatic removes operator alignment , dont set
+# SpacesInLineCommentPrefix: -1 disables spacing before comments but also classes etc.
+# PenaltyExcessCharacter: 0 # sets penalty for chars once exceeding Col Limit
+# LineEnding: LF # line ending style : \n or \r\n
+# BraceWrapping
+# - IndentBraces: true indents if statements to be non aligned within the body
+# - SplitEmptyFunction: true
+#AfterClass: false

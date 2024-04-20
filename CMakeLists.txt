@@ -4,28 +4,21 @@ project(opencvOCR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# add_compile_options(-Wno-deprecated-declarations)
 
-# Creates header file with path to images folder
-# set(IMAGE_FOLDER_PATH "images")
-# configure_file(
-#   "${CMAKE_CURRENT_SOURCE_DIR}/image_folder_path.h.in"
-#   "${CMAKE_CURRENT_BINARY_DIR}/image_folder_path.h"
-#   @ONLY
-# )
+set(IMAGE_FOLDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images")
+set(INPUT_OPEN_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/screenshot.png")
 
-# ensure LLVM_DIR is set
-macro(add_llvm_support)
+macro(add_llvm_support)  # ensure LLVM_DIR is set
+  add_compile_options(-Wno-deprecated-declarations)
   set(llvm_components core support irreader)  
   llvm_map_components_to_libnames(llvm_libs ${llvm_components})
-  message(STATUS "Linking LLVM libs to targets: ${ARGN}")
   foreach(target ${ARGN})
     target_link_libraries(${target} PUBLIC ${llvm_libs})
   endforeach()
 endmacro()
 
-# include_directories(${CMAKE_SOURCE_DIR}/src)
-
+# recommended for include is to have headers in an include folder
+include_directories(${CMAKE_SOURCE_DIR}/src) # can access any headers 
 include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -114,13 +107,19 @@ endif()
 
 enable_testing()
 
-set(TEST_EXECUTABLES fs_test
+set(TEST_EXECUTABLES fs_test ocr_test
                      tesseractparallel_test bulk_test pdf_test 
-                     textractapi_tests ocr_test atomic_test similarity_test 
+                     textractapi_tests  atomic_test similarity_test 
                      threadlocal_test)
 
 foreach(TEST_EXECUTABLE IN LISTS TEST_EXECUTABLES)
     add_executable(${TEST_EXECUTABLE} tests/${TEST_EXECUTABLE}.cc  src/fs.cc)
+
+    target_compile_definitions(${TEST_EXECUTABLE}
+    PRIVATE IMAGE_FOLDER_PATH="${IMAGE_FOLDER_PATH}"
+    PRIVATE INPUT_OPEN_TEST_PATH="${INPUT_OPEN_TEST_PATH}"
+    )
+    
     set_target_properties(${TEST_EXECUTABLE} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     )

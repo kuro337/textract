@@ -1,11 +1,9 @@
-#include <algorithm>
-#include <cstdint>
 #include <curl/curl.h>
-#include <fstream>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
 #include <leptonica/allheaders.h>
+#include <llvm/Support/FileSystem.h>
 #include <src/fs.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
@@ -16,97 +14,115 @@
 #include <opencv2/imgproc.hpp>
 #endif
 
-class MyTestSuite: public ::testing::Test {
+namespace {
+    constexpr auto *const imgFolder     = IMAGE_FOLDER_PATH;
+    constexpr auto *const inputOpenTest = INPUT_OPEN_TEST_PATH;
+} // namespace
+class ImageProcessingTests: public ::testing::Test {
   public:
-    MyTestSuite() {
-        const std::string imgFolder  = "../../images";
-        auto              imagePaths = getFilePaths(imgFolder);
-
-        if (imagePaths) {
-            fpaths = imagePaths.get();
-        }
-
-        for (const auto &e: fpaths) {
-            std::cout << e << '\n';
-        }
-    }
+    ImageProcessingTests() { fpaths = getFilePaths(imgFolder).get(); }
 
     std::vector<std::string> fpaths;
-
-    const std::string inputOpenTest = "../../images/screenshot.png";
 
     std::string tempDir = "tmpOCR";
 
   protected:
     void TearDown() override {
+        if (auto err = deleteDirectory(tempDir); err) {
+            FAIL() << "Cleanup Failure" << llvm::toString(std::move(err)) << "\n";
+        }
     }
 };
 
-TEST_F(MyTestSuite, EnvironmentTest) {
+TEST_F(ImageProcessingTests, EnvironmentTest) {
     std::cout << "Printing Sys Info" << std::endl;
     EXPECT_NO_THROW(imgstr::printSystemInfo());
 
     std::cout << "Printed Sys Info" << std::endl;
 }
 
-TEST_F(MyTestSuite, ConvertImageToTextFile) {
-    std::cout << "Running Convert Test" << std::endl;
-
+TEST_F(ImageProcessingTests, ConvertSingleImageToTextFile) {
     imgstr::ImgProcessor imageTranslator;
 
     imageTranslator.convertImageToTextFile(fpaths[0], tempDir);
-    std::filesystem::path p(fpaths[0]);
 
-    bool fileExists = std::filesystem::exists(tempDir + "/" + p.filename().string());
-    std::cout << "Tempdir File check: " << tempDir + "/" + p.filename().string() << '\n';
+    auto filename = llvm::SmallString<256>(llvm::sys::path::filename(fpaths[0]));
+
+    llvm::sys::path::replace_extension(filename, ".txt");
+
+    auto fname = tempDir + "/" + filename;
+    llvm::outs() << "Single Image Test File: " << fpaths[0] << ", LF: " << fname << '\n';
+
+    bool fileExists = llvm::sys::fs::exists(tempDir + "/" + filename);
 
     ASSERT_TRUE(fileExists);
 }
 
-// TEST_F(MyTestSuite, WriteFileTest) {
-//     // std::vector<std::string> paths;
-//     // std::transform(images.begin(), images.end(),
-//     std::back_inserter(paths), [&](const std::string &img) {
-//     //     return path + img;
-//     // });
-//     imgstr::ImgProcessor imageTranslator;
-//     EXPECT_NO_THROW(imageTranslator.addFiles(fpaths));
-//     EXPECT_NO_THROW(imageTranslator.convertImagesToTextFiles(tempDir));
+TEST_F(ImageProcessingTests, WriteFileTest) {
+    // std::vector<std::string> paths;
+    // std::transform(images.begin(), images.end(),
 
-//     std::vector<int> test_lengths = {20, 1, 1, 9};
+    //    std::back_inserter(paths), [&](const std::string &img) {
+    //     return path + img;
+    // });
 
-//         for (size_t i = 0; i < fpaths.size(); ++i) {
-//             std::size_t lastDot = fpaths[i].find_last_of('.');
-//             //            std::string expectedOutputPath = tempDir + "/" +
-//             fpaths[i].substr(0, lastDot) + ".txt";
+    imgstr::ImgProcessor imageTranslator;
 
-//             std::filesystem::path p(fpaths[i]);
-//             auto                  expectedOutputPath = tempDir + "/" +
-//             p.filename().string(); std::filesystem::path
-//             p2(expectedOutputPath); p2.replace_extension(".txt");
-//             expectedOutputPath = p2.string();
-//             bool fileExists    = std::filesystem::exists(expectedOutputPath);
-//             //    imageTranslator.convertImageToTextFile(fpaths[0], tempDir +
-//             "/" + p.filename().string());
+    EXPECT_NO_THROW(imageTranslator.addFiles(fpaths));
+    EXPECT_NO_THROW(imageTranslator.convertImagesToTextFiles(tempDir));
 
-//             std::cout << "File Exists WriteFile:" << expectedOutputPath <<
-//             '\n'; ASSERT_TRUE(fileExists);
+    for (const auto &fpath: fpaths) {
+        std::filesystem::path p(fpath);
+        auto                  expectedOutputPath = tempDir + "/" + p.filename().string();
 
-//             std::ifstream outputFile(expectedOutputPath);
-//             ASSERT_TRUE(outputFile.is_open());
+        std::filesystem::path p2(expectedOutputPath);
 
-//             int         lineCount = 0;
-//             std::string line;
-//                 while (std::getline(outputFile, line)) {
-//                     lineCount++;
-//                 }
+        p2.replace_extension(".txt");
 
-//             outputFile.close();
-//             EXPECT_GE(lineCount, test_lengths[i]);
-//         }
-// }
+        expectedOutputPath = p2.string();
 
-TEST_F(MyTestSuite, BasicAssertions) {
+        bool fileExists = std::filesystem::exists(expectedOutputPath);
+
+        if (!fileExists) {
+            llvm::outs() << "FILE DOES NOT EXIST: " << expectedOutputPath << '\n';
+        }
+
+        auto outputPath = tempDir + "/" + p.filename().string();
+
+        llvm::outs() << "Expected Output Path: " << expectedOutputPath << '\n';
+        llvm::outs() << "Computed Output Path: " << outputPath << '\n';
+
+        ASSERT_NO_THROW(imageTranslator.convertImageToTextFile(fpath, outputPath));
+
+        std::ifstream outputFile(expectedOutputPath);
+        ASSERT_NO_THROW(outputFile.is_open());
+
+        int         lineCount = 0;
+        std::string line;
+        while (std::getline(outputFile, line)) {
+            lineCount++;
+        }
+
+        outputFile.close();
+    }
+}
+
+TEST_F(ImageProcessingTests, CheckForUniqueTextFile) {
+    llvm::SmallString<128> dupePath(tempDir);
+    llvm::sys::path::append(dupePath, "dupescreenshot.txt");
+
+    llvm::SmallString<128> screenPath(tempDir);
+    llvm::sys::path::append(screenPath, "screenshot.txt");
+
+    bool dupeExists   = llvm::sys::fs::exists(dupePath);
+    bool screenExists = llvm::sys::fs::exists(screenPath);
+
+    EXPECT_TRUE(dupeExists != screenExists)
+        << "Only one should exist as we cache by the Image Hash. Concurrency can cause both to "
+           "Exist - so not an issue if both Exist.";
+}
+
+TEST_F(ImageProcessingTests, BasicAssertions) {
     tesseract::TessBaseAPI ocr;
 
     EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::eng)));
@@ -196,7 +212,8 @@ TEST_F(MyTestSuite, BasicAssertions) {
 
 #ifdef _USE_OPENCV
 
-std::string extractTextFromImageFileOpenCV(const std::string &file_path, const std::string &lang = "eng") {
+std::string
+    extractTextFromImageFileOpenCV(const std::string &file_path, const std::string &lang = "eng") {
     cv::Mat img = cv::imread(file_path);
     if (img.empty()) {
         throw std::runtime_error("Failed to load image: " + file_path);
