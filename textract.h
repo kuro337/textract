@@ -173,6 +173,8 @@ namespace imgstr {
 
     void cleanupOpenMPTesserat();
 
+    void logThreadUse();
+
 #pragma endregion
 
     inline auto &sout = llvm::outs();
@@ -308,6 +310,7 @@ namespace imgstr {
                 TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
 
                 if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
+                    serr << WARNING << "Deleting OCR Ptr" << END << '\n';
                     delete ocrPtr;
                     ocrPtr = nullptr;
                     throw std::runtime_error("Could not initialize "
@@ -320,10 +323,15 @@ namespace imgstr {
             }
         }
         ~TesseractOCR() {
+            serr << WARNING << "TesseractOCR Destructor Called on thread " << omp_get_thread_num()
+                 << END << "\n";
+
             if (ocrPtr != nullptr) {
+                serr << WARNING << "Destructor call ocrPtr was not Null" << END << '\n';
                 ocrPtr->Clear();
                 ocrPtr->End();
                 delete ocrPtr;
+                ocrPtr = nullptr;
             }
         }
         auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
@@ -333,13 +341,38 @@ namespace imgstr {
 
 #pragma omp threadprivate(thread_local_tesserat)
 
+    // inline void cleanupOpenMPTesserat() {
+    //     serr << "cleanupOpenMPTesserat Called on thread " << omp_get_thread_num() << END << '\n';
+    //     if (thread_local_tesserat.ocrPtr != nullptr) {
+    //         serr << "Cleanup: Thread Local not NullPtr, clearing" << END << '\n';
+    //         thread_local_tesserat.ocrPtr->End();
+    //         delete thread_local_tesserat.ocrPtr;
+    //         thread_local_tesserat.ocrPtr = nullptr;
+    //         TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
+    //     }
+    // }
+
     inline void cleanupOpenMPTesserat() {
 #pragma omp parallel
         {
+            serr << WARNING << "cleanupOpenMPTesserat Called" << END << '\n';
+
+            serr << WARNING << "Cleanup: Thread Local OCR pointer clearing on thread "
+                 << omp_get_thread_num();
+
             if (thread_local_tesserat.ocrPtr != nullptr) {
-                TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-                thread_local_tesserat.~TesseractOCR();
+                serr << WARNING << "Cleanup: Thread Local not NullPtr, clearing" << END << '\n';
+                thread_local_tesserat.ocrPtr->End();
+                delete thread_local_tesserat.ocrPtr;
                 thread_local_tesserat.ocrPtr = nullptr;
+                TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
+
+                // TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
+
+                /* Note: Manually calling Destructor is Bad Practice */
+                // thread_local_tesserat.~TesseractOCR();
+
+                // thread_local_tesserat.ocrPtr = nullptr;
             }
         }
     }
@@ -548,6 +581,7 @@ namespace imgstr {
             logger->log() << "Processor Initialized" << '\n'
                           << "Threads Available: " << BOLD_WHITE << omp_get_max_threads() << END
                           << "\nCores Available: " << BOLD_WHITE << omp_get_num_procs() << END
+                          << "\nCores Active: " << BOLD_WHITE << omp_get_num_threads() << END
                           << '\n';
         }
 
@@ -685,6 +719,7 @@ namespace imgstr {
               cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)),
               img_mode(ImgMode::document) {
             initLog();
+            setCores(num_cores); // explicitly set cores
         }
 
         ImgProcessor(const ImgProcessor &)                     = delete;
@@ -846,6 +881,7 @@ namespace imgstr {
             for (const auto &file: queued) {
                 convertImageToTextFile(file, output_dir, lang);
             }
+
             queued.clear();
         }
 
@@ -890,6 +926,14 @@ namespace imgstr {
             cache = folly::AtomicUnorderedInsertMap<std::string, Image>(new_capacity);
         }
 
+        /// @brief Add Files to the Queue for Processing. Methods such as
+        /// convertImagesToTextFiles(outputDir) will then begin processing all Files from the Queue
+        ///
+        /// @tparam Container
+        /// @param fileList
+        /// @code{.cpp}
+        ///     imageTranslator.addFiles(fpaths)
+        /// @endcode
         template <typename Container>
         void addFiles(const Container &fileList) {
             for (const auto &file: fileList) {
@@ -992,6 +1036,18 @@ namespace imgstr {
         }
         std::vector<unsigned char> data(std::istreambuf_iterator<char>(file), {});
         return computeSHA256(data);
+    }
+
+#pragma endregion
+
+#pragma region OPENMP_UTILS
+
+    inline void logThreadUse() {
+#pragma omp parallel
+        {
+#pragma omp single
+            { std::cout << "Actual threads in use: " << omp_get_num_threads() << std::endl; }
+        }
     }
 
 #pragma endregion

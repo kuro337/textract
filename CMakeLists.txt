@@ -107,7 +107,7 @@ endif()
 
 enable_testing()
 
-set(TEST_EXECUTABLES fs_test ocr_test
+set(TEST_EXECUTABLES fs_test ocr_test imgclass_test
                      tesseractparallel_test bulk_test pdf_test 
                      textractapi_tests  atomic_test similarity_test 
                      threadlocal_test)

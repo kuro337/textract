@@ -3,7 +3,11 @@
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
 #include <leptonica/allheaders.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
+#include <ranges>
 #include <src/fs.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
@@ -59,13 +63,6 @@ TEST_F(ImageProcessingTests, ConvertSingleImageToTextFile) {
 }
 
 TEST_F(ImageProcessingTests, WriteFileTest) {
-    // std::vector<std::string> paths;
-    // std::transform(images.begin(), images.end(),
-
-    //    std::back_inserter(paths), [&](const std::string &img) {
-    //     return path + img;
-    // });
-
     imgstr::ImgProcessor imageTranslator;
 
     EXPECT_NO_THROW(imageTranslator.addFiles(fpaths));
@@ -89,9 +86,6 @@ TEST_F(ImageProcessingTests, WriteFileTest) {
 
         auto outputPath = tempDir + "/" + p.filename().string();
 
-        llvm::outs() << "Expected Output Path: " << expectedOutputPath << '\n';
-        llvm::outs() << "Computed Output Path: " << outputPath << '\n';
-
         ASSERT_NO_THROW(imageTranslator.convertImageToTextFile(fpath, outputPath));
 
         std::ifstream outputFile(expectedOutputPath);
@@ -105,9 +99,41 @@ TEST_F(ImageProcessingTests, WriteFileTest) {
 
         outputFile.close();
     }
+
+    if (deleteDirectory(tempDir)) {
+        std::cout << "error deleting" << '\n';
+    }
 }
 
 TEST_F(ImageProcessingTests, CheckForUniqueTextFile) {
+    const auto *equal_file_1 = "dupescreenshot.png";
+    const auto *equal_file_2 = "screenshot.png";
+
+    auto filteredFiles = fpaths | std::views::filter([&](const std::string &file) {
+                             return file.find(equal_file_1) != std::string::npos ||
+                                    file.find(equal_file_2) != std::string::npos;
+                         });
+
+    auto rit = std::ranges::find_if(filteredFiles, [&](const std::string &file) {
+        return file.ends_with(".png");
+    });
+
+    if (rit != filteredFiles.end()) {
+        std::cout << "Found PNG file: " << *rit << std::endl;
+    }
+
+    auto count = std::ranges::distance(filteredFiles);
+
+    std::vector<std::string> fullVector(filteredFiles.begin(), filteredFiles.end());
+
+    ASSERT_EQ(count, 2);
+
+    imgstr::ImgProcessor imageTranslator;
+
+    for (const auto &file: filteredFiles) {
+        imageTranslator.convertImageToTextFile(file, tempDir);
+    };
+
     llvm::SmallString<128> dupePath(tempDir);
     llvm::sys::path::append(dupePath, "dupescreenshot.txt");
 
@@ -150,65 +176,64 @@ TEST_F(ImageProcessingTests, BasicAssertions) {
     EXPECT_EQ(7 * 6, 42);
 }
 
-// auto extractTextFromImageFileLeptonica(const std::string &file_path, const
-// std::string &lang = "eng") -> std::string {
-//     auto *api = new tesseract::TessBaseAPI();
-//         if (api->Init(nullptr, "eng") != 0) {
-//             fprintf(stderr, "Could not initialize tesseract.\n");
-//             exit(1);
-//     }
-//     Pix *image = pixRead(file_path.c_str());
+auto extractTextFromImageFileLeptonica(const std::string &file_path,
+                                       const std::string &lang = "eng") -> std::string {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng") != 0) {
+        fprintf(stderr, "Could not initialize tesseract.\n");
+        exit(1);
+    }
+    Pix *image = pixRead(file_path.c_str());
 
-//     // fully automatic - suitable for single columns of text
+    // fully automatic - suitable for single columns of text
 
-//     api->SetPageSegMode(tesseract::PSM_AUTO);
+    api->SetPageSegMode(tesseract::PSM_AUTO);
 
-//     api->SetImage(image);
-//     std::string outText(api->GetUTF8Text());
-//     outText = api->GetUTF8Text();
+    api->SetImage(image);
+    std::string outText(api->GetUTF8Text());
+    outText = api->GetUTF8Text();
 
-//     api->End();
-//     delete api;
-//     pixDestroy(&image);
-//     return outText;
-// }
+    api->End();
+    delete api;
+    pixDestroy(&image);
+    return outText;
+}
 
-// auto extractTextLSTM(const std::string &file_path, const std::string &lang =
-// "eng") -> std::string {
-//     auto *api = new tesseract::TessBaseAPI();
-//         if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
-//             fprintf(stderr, "Could not initialize tesseract.\n");
-//             exit(1);
-//     }
-//     Pix *image = pixRead(file_path.c_str());
+auto extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") -> std::string {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
+        fprintf(stderr, "Could not initialize tesseract.\n");
+        exit(1);
+    }
+    Pix *image = pixRead(file_path.c_str());
 
-//     api->SetImage(image);
-//     std::string outText(api->GetUTF8Text());
-//     outText = api->GetUTF8Text();
+    api->SetImage(image);
+    std::string outText(api->GetUTF8Text());
+    outText = api->GetUTF8Text();
 
-//     api->End();
-//     delete api;
-//     pixDestroy(&image);
-//     return outText;
-// }
+    api->End();
+    delete api;
+    pixDestroy(&image);
+    return outText;
+}
 
-// TEST_F(MyTestSuite, OEMvsLSTMAnalysis) {
-//     auto start = imgstr::getStartTime();
-//     auto res1  = extractTextFromImageFileLeptonica(fpaths[1]);
+TEST_F(ImageProcessingTests, OEMvsLSTMAnalysis) {
+    auto start = imgstr::getStartTime();
+    auto res1  = extractTextFromImageFileLeptonica(fpaths[1]);
 
-//     std::cout << res1 << '\n';
+    std::cout << res1 << '\n';
 
-//     auto time1 = imgstr::getDuration(start);
-//     std::cout << "Time Leptonica : " << time1 << '\n';
+    auto time1 = imgstr::getDuration(start);
+    std::cout << "Time Leptonica : " << time1 << '\n';
 
-//     auto start2 = imgstr::getStartTime();
-//     auto res2   = extractTextLSTM(fpaths[1]);
+    auto start2 = imgstr::getStartTime();
+    auto res2   = extractTextLSTM(fpaths[1]);
 
-//     std::cout << res2 << '\n';
+    std::cout << res2 << '\n';
 
-//     auto time2 = imgstr::getDuration(start);
-//     std::cout << "Time LSTM: " << time2 << '\n';
-// }
+    auto time2 = imgstr::getDuration(start);
+    std::cout << "Time LSTM: " << time2 << '\n';
+}
 
 #ifdef _USE_OPENCV
 

@@ -33,3 +33,44 @@ void createPDF(const std::string &input_path,
     delete api;
     delete renderer;
 }
+
+auto extractTextFromImageFileLeptonica(const std::string &file_path,
+                                       const std::string &lang = "eng") -> std::string {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng") != 0) {
+        fprintf(stderr, "Could not initialize tesseract.\n");
+        exit(1);
+    }
+    Pix *image = pixRead(file_path.c_str());
+
+    // fully automatic - suitable for single columns of text
+
+    api->SetPageSegMode(tesseract::PSM_AUTO);
+
+    api->SetImage(image);
+    std::string outText(api->GetUTF8Text());
+    outText = api->GetUTF8Text();
+
+    api->End();
+    delete api;
+    pixDestroy(&image);
+    return outText;
+}
+
+auto extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") -> std::string {
+    auto *api = new tesseract::TessBaseAPI();
+    if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
+        fprintf(stderr, "Could not initialize tesseract.\n");
+        exit(1);
+    }
+    Pix *image = pixRead(file_path.c_str());
+
+    api->SetImage(image);
+    std::string outText(api->GetUTF8Text());
+    outText = api->GetUTF8Text();
+
+    api->End();
+    delete api;
+    pixDestroy(&image);
+    return outText;
+}
