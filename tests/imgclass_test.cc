@@ -1,6 +1,6 @@
 
+#include <fs.h>
 #include <gtest/gtest.h>
-#include <src/fs.h>
 #include <textract.h>
 
 namespace imgclass_test_constants {

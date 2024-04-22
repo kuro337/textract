@@ -1,5 +1,5 @@
+#include <fs.h>
 #include <gtest/gtest.h>
-#include <src/fs.h>
 #include <string>
 #include <textract.h>
 #include <vector>
@@ -14,24 +14,14 @@ class PublicAPITests: public ::testing::Test {
 
     std::vector<std::string> fpaths;
 
-    //    const std::string inputFile = "../../images/imgtext.jpeg";
-
-    //    const std::string outputInNewFolderInInputImages = "../../images/processed";
     const std::string tempDir = "processed";
-
-    //    const std::string outputDirWrite = "tmpapi";
-    //   const std::string diroutputTest  = "tmpdir";
 
     imgstr::ImgProcessor app;
 
   protected:
     void SetUp() override {}
 
-    void TearDown() override {
-        //      std::filesystem::remove_all(outputDirWrite);
-        //     std::filesystem::remove_all(diroutputTest);
-        //        std::filesystem::remove_all(outputInNewFolderInInputImages);
-    }
+    void TearDown() override {}
 };
 
 /* All Tests Passed Memory Sanitization ASan */

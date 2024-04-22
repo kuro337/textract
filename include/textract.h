@@ -1079,17 +1079,29 @@ namespace imgstr {
         return false;
     }
 
+    // static const std::unordered_set<llvm::StringRef> validExtensions = {
+    //     ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif"};
+
+    // inline auto isImageFile(const llvm::StringRef &path) -> bool {
+    //     return validExtensions.contains(path.drop_front(path.find_last_of('.')));
+
+    //     // changed type to StringRef from std::string
+
+    //     //        return validExtensions.find(llvm::sys::path::extension(path).str()) !=
+    //     //              validExtensions.end();
+    // }
+
     inline void tesseractInvokeLog(ImgMode img_mode) {
         serr << ERROR << "getTextOCR "
              << (img_mode == ImgMode::document ? "document mode " : "image mode ") << END
              << " -> called from thread: " << omp_get_thread_num() << '\n';
     }
 
-    /* Leptonica reads 40% or more faster than OpenCV */
-
     inline auto getTextOCR(const std::vector<unsigned char> &file_content,
                            const std::string                &lang,
                            ImgMode img_mode = ImgMode::document) -> std::string {
+        /* Leptonica reads 40% or more faster than OpenCV */
+
 #ifdef _DEBUGAPP
         tesseractInvokeLog(img_mode);
 #endif

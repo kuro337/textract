@@ -1,40 +1,27 @@
+#include <crypto.h>
 #include <gtest/gtest.h>
-#include <textract.h>
+#include <util.h>
 
-using namespace imgstr;
+namespace {
+    constinit auto *const a       = "intention";
+    constinit auto *const b       = "execution";
+    constinit auto *const equal_1 = IMAGE_FOLDER_PATH "/screenshot.png";
+    constinit auto *const equal_2 = IMAGE_FOLDER_PATH "/dupescreenshot.png";
+    constinit auto *const unequal = IMAGE_FOLDER_PATH "/imgtext.jpeg";
+} // namespace
 
-TEST(SimilaritySuite, SingleString) {
-
-    using namespace std;
-
-    string a = "intention";
-    string b = "execution";
-
-    EXPECT_EQ(levenshteinScore(a, b), 5);
-}
+TEST(SimilaritySuite, SingleString) { EXPECT_EQ(levenshteinScore(a, b), 5); }
 
 TEST(SimilaritySuite, ImageSHA256Equal) {
-
-    using namespace std;
-    const string path = "../../images/";
-    string file_a = path + "screenshot.png";
-    string file_b = path + "dupescreenshot.png";
-
-    string sha_a = computeSHA256(file_a);
-    string sha_b = computeSHA256(file_b);
+    auto sha_a = computeSHA256(equal_1);
+    auto sha_b = computeSHA256(equal_2);
 
     EXPECT_EQ(sha_a, sha_b);
 }
 
 TEST(SimilaritySuite, ImageSHA256Unequal) {
-
-    using namespace std;
-    const string path = "../../images/";
-    string file_a = path + "screenshot.png";
-    string file_b = path + "imgtext.jpeg";
-
-    string sha_a = computeSHA256(file_a);
-    string sha_b = computeSHA256(file_b);
+    auto sha_a = computeSHA256(equal_1);
+    auto sha_b = computeSHA256(unequal);
 
     EXPECT_NE(sha_a, sha_b);
 }

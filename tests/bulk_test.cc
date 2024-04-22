@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
-#include <string>
 #include <textract.h>
-#include <vector>
 
-class PublicAPITests : public ::testing::Test {
+class PublicAPITests: public ::testing::Test {
     // public:
     //   const std::string outputBulkImageMode = "../../../bulk/image_mode";
     //   const std::string outputBulkDocMode = "../../../bulk/document_mode";
@@ -20,7 +18,7 @@ class PublicAPITests : public ::testing::Test {
     //   }
 };
 
-TEST_F(PublicAPITests, Placeholder) { EXPECT_NO_THROW(1 == 1); };
+TEST_F(PublicAPITests, Placeholder) { EXPECT_EQ(1 + 1, 2); };
 
 // TEST_F(PublicAPITests, ProcessBulkDocumentsSimple) {
 

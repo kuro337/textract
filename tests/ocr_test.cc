@@ -1,4 +1,6 @@
+#include <conversion.h>
 #include <curl/curl.h>
+#include <fs.h>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>
@@ -8,7 +10,6 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
 #include <ranges>
-#include <src/fs.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
 
@@ -174,47 +175,6 @@ TEST_F(ImageProcessingTests, BasicAssertions) {
 
     EXPECT_STRNE("hello", "world");
     EXPECT_EQ(7 * 6, 42);
-}
-
-auto extractTextFromImageFileLeptonica(const std::string &file_path,
-                                       const std::string &lang = "eng") -> std::string {
-    auto *api = new tesseract::TessBaseAPI();
-    if (api->Init(nullptr, "eng") != 0) {
-        fprintf(stderr, "Could not initialize tesseract.\n");
-        exit(1);
-    }
-    Pix *image = pixRead(file_path.c_str());
-
-    // fully automatic - suitable for single columns of text
-
-    api->SetPageSegMode(tesseract::PSM_AUTO);
-
-    api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
-
-    api->End();
-    delete api;
-    pixDestroy(&image);
-    return outText;
-}
-
-auto extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") -> std::string {
-    auto *api = new tesseract::TessBaseAPI();
-    if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
-        fprintf(stderr, "Could not initialize tesseract.\n");
-        exit(1);
-    }
-    Pix *image = pixRead(file_path.c_str());
-
-    api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
-
-    api->End();
-    delete api;
-    pixDestroy(&image);
-    return outText;
 }
 
 TEST_F(ImageProcessingTests, OEMvsLSTMAnalysis) {
