@@ -90,8 +90,6 @@ auto createDirectoryForFile(const llvm::Twine &filePath) -> llvm::Expected<bool>
 
     llvm::SmallString<256> directoryPath(directoryPathRef);
 
-    llvm::errs() << llvm::formatv("BaseDir Computed for: {0} -> {1}\n", filePath, directoryPathRef);
-
     if (llvm::sys::fs::exists(directoryPath)) {
         return true;
     }
@@ -111,17 +109,6 @@ auto createQualifiedFilePath(const llvm::StringRef &fileName,
                              const llvm::StringRef &directory,
                              const llvm::StringRef &extension = ".txt",
                              const char             osSeparator) -> llvm::Expected<std::string> {
-    // // Ensure directory is valid and append it
-    // if (!directory.empty() && !llvm::sys::fs::exists(directory)) {
-    //     if (auto ERR = llvm::sys::fs::create_directories(directory); ERR) {
-    //         return llvm::make_error<llvm::StringError>(
-    //             "Failed to create directory: " + directory.str(), ERR);
-    //     }
-    // }
-
-    //    llvm::outs() << llvm::formatv(
-    //       "Filename:{0}, Dir:{1}, OsSep:{2}\n", fileName, directory, osSeparator);
-
     llvm::SmallString<256> outputFilePath;
     llvm::sys::path::append(outputFilePath, directory);
 
@@ -129,12 +116,10 @@ auto createQualifiedFilePath(const llvm::StringRef &fileName,
         outputFilePath.push_back(osSeparator);
     }
 
-    // Handle the filename and extension
     llvm::SmallString<256> fullFilename = llvm::sys::path::filename(fileName);
     llvm::sys::path::replace_extension(fullFilename, extension);
     llvm::sys::path::append(outputFilePath, fullFilename);
 
-    llvm::errs() << "Final constructed path: " << outputFilePath << "\n";
     return std::string(outputFilePath.str());
 }
 

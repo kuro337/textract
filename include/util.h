@@ -8,17 +8,79 @@
 #include <llvm/Support/raw_ostream.h>
 #include <unordered_set>
 
+#ifdef DEBUG
+#define DEBUG_LOG true
+#else
+#define DEBUG_LOG false
+#endif
+
+#ifdef DEBUG_THREADLOCAL
+#define THREADLOCAL_DEBUG true
+#else
+#define THREADLOCAL_DEBUG false
+#endif
+
+#ifdef DEBUG_CACHE
+#define CACHE_DEBUG true
+#else
+#define CACHE_DEBUG false
+#endif
+
+#ifdef DEBUG_MUTEX
+#define MUTEX_DEBUG true
+#else
+#define MUTEX_DEBUG false
+#endif
+
 struct Throw {};
 struct NoThrow {};
 struct StdErr {};
+namespace logging {
+    enum class LogLevel { Info, Err };
+}
+
+struct DebugFlag {
+    static constexpr bool enabled = DEBUG_LOG;
+    static constexpr auto getPrefix() -> const char * { return ""; }
+};
+
+struct ThreadLocalConfig: DebugFlag {
+    static constexpr bool enabled = THREADLOCAL_DEBUG;
+    static constexpr auto getPrefix() -> const char * { return "[ThreadLocal] "; }
+};
+
+struct CacheConfig: DebugFlag {
+    static constexpr bool enabled = CACHE_DEBUG;
+    static constexpr auto getPrefix() -> const char * { return "[Cache] "; }
+};
+
+struct MutexConfig: DebugFlag {
+    static constexpr bool enabled = MUTEX_DEBUG;
+    static constexpr auto getPrefix() -> const char * { return "[Mutex] "; }
+};
 
 template <typename... Args>
 inline void serrfmt(const char *message, Args &&...args) {
     llvm::errs() << llvm::formatv(message, std::forward<Args>(args)...) << "\n";
 }
+
 template <typename... Args>
 inline void soutfmt(const char *message, Args &&...args) {
     llvm::outs() << llvm::formatv(message, std::forward<Args>(args)...) << "\n";
+}
+
+template <logging::LogLevel level, typename Config = DebugFlag, typename... Args>
+constexpr void Debug(const char *message, Args &&...args) {
+#ifdef _DEBUGAPP
+    if constexpr (Config::enabled) {
+        const char *prefix = Config::getPrefix();
+        if constexpr (level == logging::LogLevel::Info) {
+            llvm::outs() << prefix << llvm::formatv(message, std::forward<Args>(args)...) << "\n";
+        } else if constexpr (level == logging::LogLevel::Err) {
+            llvm::errs() << prefix << llvm::formatv(message, std::forward<Args>(args)...) << "\n";
+        }
+    }
+#endif
 }
 
 /// @brief Utility to Handle llvm::Expected<T> when we care about if the Method Error Status alone
@@ -59,6 +121,24 @@ auto Unwrap(llvm::Expected<T> &&expected) -> bool {
         if (!expected) {
             return false;
         }
+    }
+    return true;
+}
+
+template <typename Tag>
+auto HandleError(llvm::Error &&error) -> bool {
+    if constexpr (std::is_same_v<Tag, Throw>) {
+        if (error) {
+            std::string errorMsg = llvm::toString(std::move(error));
+            throw std::runtime_error(errorMsg);
+        }
+    } else if constexpr (std::is_same_v<Tag, StdErr>) {
+        if (error) {
+            llvm::errs() << "Error: " << llvm::toString(std::move(error)) << '\n';
+            return false;
+        }
+    } else if constexpr (std::is_same_v<Tag, NoThrow>) {
+        return !static_cast<bool>(error);
     }
     return true;
 }

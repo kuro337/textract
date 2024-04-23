@@ -145,8 +145,8 @@ namespace imgstr {
                     const std::string                &lang,
                     ImgMode                           img_mode) -> std::string;
 
-    auto getTextImgFile(const std::string &file_path,
-                        const std::string &lang = "eng") -> std::string;
+    auto getTextImgFile(const std::string &file_path, const std::string &lang = "eng")
+        -> std::string;
 
 #ifndef DATAPATH
     static constexpr auto DATAPATH = "/opt/homebrew/opt/tesseract/share/tessdata";
@@ -788,8 +788,8 @@ namespace imgstr {
             serr << WARNING << " All Threads Completed\n";
         }
 
-        auto getImageText(const std::string &file_path,
-                          ISOLang            lang = ISOLang::en) -> std::optional<std::string> {
+        auto getImageText(const std::string &file_path, ISOLang lang = ISOLang::en)
+            -> std::optional<std::string> {
             auto image = processImageFile(file_path);
 
             if (image) {
@@ -827,7 +827,7 @@ namespace imgstr {
 
             auto files = getFilePaths(directory);
 
-            if (output_path != "") {
+            if (!output_path.empty()) {
                 try {
                     Unwrap<Throw>(createDirectories(output_path));
                 } catch (const std::exception &e) {
@@ -891,9 +891,10 @@ namespace imgstr {
         ///
         void convertImageToTextFile(const std::string &input_file,
                                     const std::string &output_path = "",
+                                    bool               create_dir  = true,
                                     ISOLang            lang        = ISOLang::en) {
-            if (output_path != "") {
-                Unwrap<StdErr>(createDirectoryForFile(output_path));
+            if (create_dir && !output_path.empty()) {
+                Unwrap<StdErr>(createDirectories(output_path));
             }
 
             auto output_file = createQualifiedFilePath(input_file, output_path, ".txt");
@@ -936,7 +937,7 @@ namespace imgstr {
 #pragma omp parallel for
             for (const auto &file: queued) {
                 START_TIMING();
-                convertImageToTextFile(file, output_dir, lang);
+                convertImageToTextFile(file, output_dir, false, lang);
                 END_TIMING("parallel() - file processed ");
             }
             queued.clear();
@@ -944,7 +945,7 @@ namespace imgstr {
 
         void convertImagesToTextFiles(const std::string &output_dir = "",
                                       ISOLang            lang       = ISOLang::en) {
-            if (output_dir != "") {
+            if (!output_dir.empty()) {
                 Unwrap<StdErr>(createDirectories(output_dir));
             }
 
@@ -955,7 +956,7 @@ namespace imgstr {
 
 #pragma omp parallel for
             for (const auto &file: queued) {
-                convertImageToTextFile(file, output_dir, lang);
+                convertImageToTextFile(file, output_dir, false, lang);
             }
 
             queued.clear();

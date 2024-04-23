@@ -13,4 +13,9 @@
 ```bash
 add_executable(${TEST_EXECUTABLE} tests/${TEST_EXECUTABLE}.cc  src/fs.cc)
 
+# Note that we can pass the .so directly for Linking deps
+# ex:
+
+target_link_libraries(target PUBLIC /usr/local/lib/libtesseract.so)
+
 ```
