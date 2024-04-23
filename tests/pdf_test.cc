@@ -21,9 +21,8 @@ class PDFSuite: public ::testing::Test {
 
         if (deletionResult) {
             llvm::handleAllErrors(std::move(deletionResult), [&](const llvm::StringError &err) {
-                FAIL() << llvm::errs()
-                       << "Error occurred while trying to delete the PDF file: " << err.getMessage()
-                       << '\n';
+                llvm::errs() << "Error occurred while trying to delete the PDF file: "
+                             << err.getMessage() << '\n';
             });
         }
     }

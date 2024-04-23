@@ -116,6 +116,12 @@ target_link_libraries(common_lib
       PUBLIC PkgConfig::Leptonica
       PUBLIC Folly::folly)
 
+
+# OpenSSL issues with EVP_MD_SIZE
+
+# Make sure the OpenSSL dirs are included or CMake Config will be picked up
+#target_include_directories(common_lib PUBLIC "${CMAKE_SOURCE_DIR}/include" PUBLIC ${OPENSSL_INCLUDE_DIR})
+
 add_llvm_support(common_lib)
 
 if(OpenMP_CXX_FOUND)

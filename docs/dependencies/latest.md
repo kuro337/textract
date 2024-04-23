@@ -28,3 +28,11 @@ sudo ldconfig  # To update the library cache
 ./configure --help
 
 ```
+
+```bash
+OpenSSL
+
+Make sure the OpenSSL dirs are included or CMake Config will be picked up
+
+target_include_directories(common_lib PUBLIC "${CMAKE_SOURCE_DIR}/include" PUBLIC ${OPENSSL_INCLUDE_DIR})
+```

@@ -2,7 +2,6 @@
 #include <generated_files.h>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
-#include <iostream>
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <textract.h>
@@ -19,6 +18,8 @@ class ParallelPerfTesseract: public ::testing::Test {
 
     void TearDown() override {}
 };
+
+// Fix issue with this fn handling Errors properly - shouldnt segfault
 
 TEST_F(ParallelPerfTesseract, OEMvsLSTMAnalysisDebug) {
     ASSERT_NO_THROW(convertImagesToText(fileNames));

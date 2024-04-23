@@ -7,8 +7,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(INPUT_OPEN_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/screenshot.png")
 set(IMAGE_FOLDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images")
-set(TESSDATA_PREFIX "/usr/local/share/tessdata" CACHE PATH "Path Tesseract Trained Data")
-add_definitions(-DTESSDATA_PREFIX="${TESSDATA_PREFIX}")
 
 # ─────────────────────────────────────────────────────────────────
 # Macros and Optional Flags
@@ -19,7 +17,6 @@ option(DEBUG_CACHE "Enable cache debug logging" ON)
 option(DEBUG_MUTEX "Enable mutex debug logging" OFF)
 option(ENABLE_TIMING "Enable timing functionality" OFF)
 option(BENCHMARK "Build the benchmark tests" OFF)
-
 
 macro(enable_options target options)
     foreach(option IN LISTS ${options})
@@ -44,11 +41,16 @@ macro(find_pkg PKG_NAME PKG_CONFIG_NAME)
   list(LENGTH PKG_VERSION_OPTIONAL PKG_VERSION_ARG_COUNT)
   if(PKG_VERSION_ARG_COUNT EQUAL 1)
     set(REQUIRED_VERSION ${PKG_VERSION_OPTIONAL})
-    pkg_check_modules(${PKG_NAME} REQUIRED IMPORTED_TARGET ${PKG_CONFIG_NAME}>=${REQUIRED_VERSION})
+    pkg_check_modules(${PKG_NAME} IMPORTED_TARGET ${PKG_CONFIG_NAME}>=${REQUIRED_VERSION})
+    if(NOT ${PKG_NAME}_FOUND)
+      message(WARNING "${PKG_NAME} version ${REQUIRED_VERSION} not found. Trying any available version.")
+      pkg_check_modules(${PKG_NAME} REQUIRED IMPORTED_TARGET ${PKG_CONFIG_NAME})
+    endif()
   else()
     pkg_check_modules(${PKG_NAME} REQUIRED IMPORTED_TARGET ${PKG_CONFIG_NAME})
   endif()
 endmacro()
+
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT APPLE)
     add_compile_definitions(_DEBUGAPP)
@@ -84,6 +86,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+if(APPLE)
+    set(TESSDATA_PREFIX "/opt/homebrew/opt/tesseract/share/tessdata" CACHE PATH "Path to Tesseract trained data")
+elseif(UNIX AND NOT APPLE)
+    set(TESSDATA_PREFIX "/usr/local/share/tessdata" CACHE PATH "Path to Tesseract trained data")
+endif()
+add_definitions(-DTESSDATA_PREFIX="${TESSDATA_PREFIX}")
+
 # ─────────────────────────────────────────────────────────────────
 # Static Library - Linking all Libraries with common_lib
 # ─────────────────────────────────────────────────────────────────
@@ -94,9 +103,12 @@ add_library(common_lib ${SRC_FILES})
 set(DEBUG_OPTIONS DEBUG DEBUG_THREADLOCAL DEBUG_CACHE DEBUG_MUTEX)
 enable_options(common_lib DEBUG_OPTIONS)
 
-target_include_directories(common_lib PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(common_lib PUBLIC "${CMAKE_SOURCE_DIR}/include" PUBLIC ${OPENSSL_INCLUDE_DIR})
 
 link_llvm(common_lib)
+
+message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
 
 target_link_libraries(common_lib
       PUBLIC GTest::gtest_main
