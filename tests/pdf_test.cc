@@ -9,9 +9,6 @@
 namespace {
     constinit auto *const inputOpenTest = INPUT_OPEN_TEST_PATH;
     const std::string     pdfOutputPath = "my_first_tesseract";
-
-    constexpr auto tessdata_path = "/opt/homebrew/opt/tesseract/share/tessdata";
-
 } // namespace
 class PDFSuite: public ::testing::Test {
   public:
@@ -19,10 +16,17 @@ class PDFSuite: public ::testing::Test {
     void SetUp() override { const auto *const inputOpenTest = INPUT_OPEN_TEST_PATH; }
 
     void TearDown() override {
-        if (!deleteFile(pdfOutputPath)) {
-            std::cerr << "Error occurred while trying to delete the PDF file." << '\n';
+        // Attempt to delete the file and capture the result as an error.
+        llvm::Error deletionResult = deleteFile(pdfOutputPath + ".pdf");
+
+        if (deletionResult) {
+            llvm::handleAllErrors(std::move(deletionResult), [&](const llvm::StringError &err) {
+                FAIL() << llvm::errs()
+                       << "Error occurred while trying to delete the PDF file: " << err.getMessage()
+                       << '\n';
+            });
         }
     }
 };
 
-TEST_F(PDFSuite, SinglePDF) { createPDF(inputOpenTest, pdfOutputPath, tessdata_path); }
+TEST_F(PDFSuite, SinglePDF) { createPDF(inputOpenTest, pdfOutputPath, TESSDATA_PREFIX); }

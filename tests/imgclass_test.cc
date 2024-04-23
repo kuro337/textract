@@ -1,4 +1,5 @@
 
+#include "util.h"
 #include <fs.h>
 #include <gtest/gtest.h>
 #include <textract.h>
@@ -52,6 +53,8 @@ TEST_F(Imgclasstest, BasicAssertions) {
     if (!fpaths.empty()) {
         ASSERT_NO_THROW(app->convertImageToTextFile(fpaths[0], tempDir));
     }
+
+    ASSERT_TRUE(HandleError<StdErr>(deleteDirectory(tempDir)));
 }
 
 auto main(int argc, char **argv) -> int {
