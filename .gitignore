@@ -7,3 +7,4 @@ test_images
 bulk
 tests/bulk_test.cc
 CMakebkp.txt
+.vscode

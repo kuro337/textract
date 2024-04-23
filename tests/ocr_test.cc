@@ -1,5 +1,6 @@
 #include <conversion.h>
 #include <curl/curl.h>
+#include <filesystem>
 #include <fs.h>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
@@ -49,14 +50,19 @@ TEST_F(ImageProcessingTests, EnvironmentTest) {
 TEST_F(ImageProcessingTests, ConvertSingleImageToTextFile) {
     imgstr::ImgProcessor imageTranslator;
 
-    imageTranslator.convertImageToTextFile(fpaths[0], tempDir);
+    std::string imagePath = fpaths[0];
 
-    auto filename = llvm::SmallString<256>(llvm::sys::path::filename(fpaths[0]));
+    imageTranslator.convertImageToTextFile(imagePath, tempDir);
+
+    llvm::SmallString<256> filename(llvm::sys::path::filename(imagePath));
 
     llvm::sys::path::replace_extension(filename, ".txt");
 
-    auto fname = tempDir + "/" + filename;
-    llvm::outs() << "Single Image Test File: " << fpaths[0] << ", LF: " << fname << '\n';
+    //    auto fname = tempDir + "/" + filename;
+
+    std::string fname = tempDir + "/" + std::string(filename.c_str());
+
+    llvm::outs() << "Single Image Test File: " << imagePath << ", LF: " << fname << '\n';
 
     bool fileExists = llvm::sys::fs::exists(tempDir + "/" + filename);
 

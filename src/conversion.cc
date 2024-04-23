@@ -58,8 +58,8 @@ void createPDF(const std::string &input_path,
     delete renderer;
 }
 
-auto extractTextFromImageFileLeptonica(const std::string &file_path,
-                                       const std::string &lang) -> std::string {
+auto extractTextFromImageFileLeptonica(const std::string &file_path, const std::string &lang)
+    -> std::string {
     auto *api = new tesseract::TessBaseAPI();
     if (api->Init(nullptr, "eng") != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
@@ -70,10 +70,12 @@ auto extractTextFromImageFileLeptonica(const std::string &file_path,
     // fully automatic - suitable for single columns of text
 
     api->SetPageSegMode(tesseract::PSM_AUTO);
-
     api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
+
+    // Get the text from the image.
+    char       *rawText = api->GetUTF8Text();
+    std::string outText(rawText);
+    delete[] rawText; // Free the memory allocated by GetUTF8Text
 
     api->End();
     delete api;
@@ -90,8 +92,12 @@ auto extractTextLSTM(const std::string &file_path, const std::string &lang) -> s
     Pix *image = pixRead(file_path.c_str());
 
     api->SetImage(image);
-    std::string outText(api->GetUTF8Text());
-    outText = api->GetUTF8Text();
+
+    // Get the text from the image.
+    char       *rawText = api->GetUTF8Text();
+    std::string outText(rawText);
+
+    delete[] rawText; // Free the memory allocated by GetUTF8Text
 
     api->End();
     delete api;
