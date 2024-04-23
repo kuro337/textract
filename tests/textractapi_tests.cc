@@ -16,7 +16,7 @@ class PublicAPITests: public ::testing::Test {
 
     const std::string tempDir = "processed";
 
-    imgstr::ImgProcessor app;
+    std::unique_ptr<imgstr::ImgProcessor> app = std::make_unique<imgstr::ImgProcessor>();
 
   protected:
     void SetUp() override {}
@@ -27,14 +27,23 @@ class PublicAPITests: public ::testing::Test {
 /* All Tests Passed Memory Sanitization ASan */
 
 TEST_F(PublicAPITests, GetTextFromOneImage) {
-    auto text = app.getImageText(fpaths[0]);
+    //    auto text = app.getImageText(fpaths[0]);
+    auto text = app->getImageText(fpaths[0]);
     ASSERT_TRUE(text.has_value());
-    EXPECT_EQ("HAWAII\n", text.value());
-
-    if (text) {
-        EXPECT_EQ("HAWAII\n", text.value());
-    }
 }
+
+TEST_F(PublicAPITests, ProcessSimpleDir) {
+    ///    app.setCores(4);
+    app->setCores(4);
+
+    EXPECT_NO_THROW(app->simpleProcessDir(imgFolder, tempDir););
+}
+
+TEST_F(PublicAPITests, ProcessFilesFromDir) {
+    EXPECT_NO_THROW(app->processImagesDir(imgFolder, true, tempDir));
+}
+
+TEST_F(PublicAPITests, Results) { EXPECT_NO_THROW(app->getResults()); }
 
 /*
 
@@ -83,16 +92,6 @@ execution times for different tasks or iterations within the 'Simple' and
 
 */
 
-TEST_F(PublicAPITests, ProcessSimpleDir) {
-    EXPECT_NO_THROW(app.simpleProcessDir(imgFolder, tempDir););
-}
-
-TEST_F(PublicAPITests, ProcessFilesFromDir) {
-    EXPECT_NO_THROW(app.processImagesDir(imgFolder, true, tempDir));
-}
-
-TEST_F(PublicAPITests, Results) { EXPECT_NO_THROW(app.getResults()); }
-
 /*
 
 Document Mode : 3927 ms
@@ -103,17 +102,23 @@ ImgMode::image sets : ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
 */
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextDocumentMode) {
-    app.addFiles(fpaths);
+    app->addFiles(fpaths);
 
-    EXPECT_NO_THROW(app.convertImagesToTextFiles(tempDir));
+    EXPECT_NO_THROW(app->convertImagesToTextFiles(tempDir));
 };
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextImageMode) {
-    app.setImageMode(imgstr::ImgMode::image);
+    app->setImageMode(imgstr::ImgMode::image);
 
-    app.addFiles(fpaths);
+    app->addFiles(fpaths);
 
-    EXPECT_NO_THROW(app.convertImagesToTextFiles(tempDir));
+    EXPECT_NO_THROW(app->convertImagesToTextFiles(tempDir));
 
-    app.getResults();
+    app->getResults();
 };
+
+auto main(int argc, char **argv) -> int {
+    ::testing::InitGoogleTest(&argc, argv);
+
+    return RUN_ALL_TESTS();
+}

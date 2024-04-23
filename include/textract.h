@@ -16,12 +16,12 @@
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/raw_ostream.h>
+#include <memory>
 #include <mutex>
 #include <omp.h>
 #include <openssl/evp.h>
 #include <optional>
 #include <queue>
-#include <ranges>
 #include <sstream>
 #include <string>
 #include <tesseract/baseapi.h>
@@ -295,35 +295,30 @@ namespace imgstr {
     static std::atomic<int> TesseractThreadCount(0);
 
     struct TesseractOCR {
-        tesseract::TessBaseAPI *ocrPtr {nullptr};
+        //        tesseract::TessBaseAPI *ocrPtr {nullptr};
 
-        TesseractOCR()                                         = default;
-        TesseractOCR(const TesseractOCR &)                     = default;
-        auto operator=(const TesseractOCR &) -> TesseractOCR & = default;
+        std::unique_ptr<tesseract::TessBaseAPI> ocrPtr;
+
+        TesseractOCR(): ocrPtr(nullptr) {}
+
+        //        TesseractOCR()                                         = default;
+        TesseractOCR(const TesseractOCR &)                     = delete;
+        auto operator=(const TesseractOCR &) -> TesseractOCR & = delete;
         TesseractOCR(TesseractOCR &&)                          = delete;
         auto operator=(TesseractOCR &&) -> TesseractOCR      & = delete;
 
-        void init(const std::string &lang = "eng", ImgMode mode = ImgMode::document) {
-            if (ocrPtr == nullptr) {
-                ocrPtr = new tesseract::TessBaseAPI();
+        ////// using Smart Pointers
 
-                serr << WARNING << "Created New Tesseract" << END << '\n';
+        // Properly returning the raw pointer from the unique_ptr
+        auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr.get(); }
 
-                TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
+        // ~TesseractOCR() {
+        //     if (ocrPtr) {
+        //         ocrPtr->End();
+        //         TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
+        //     }
+        // }
 
-                if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
-                    serr << WARNING << "Deleting OCR Ptr" << END << '\n';
-                    delete ocrPtr;
-                    ocrPtr = nullptr;
-                    throw std::runtime_error("Could not initialize "
-                                             "tesseract.");
-                }
-                if (mode == ImgMode::image) { /* Optimized for Complex Images */
-                    sout << "Image mode set\n";
-                    ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
-                }
-            }
-        }
         ~TesseractOCR() {
             serr << WARNING << "TesseractOCR Destructor Called on thread " << omp_get_thread_num()
                  << END << "\n";
@@ -332,16 +327,72 @@ namespace imgstr {
                 serr << WARNING << "Destructor call ocrPtr was not Null" << END << '\n';
                 ocrPtr->Clear();
                 ocrPtr->End();
-                delete ocrPtr;
+                TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
+                // delete ocrPtr;
                 ocrPtr = nullptr;
             }
         }
-        auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
+
+        void init(const std::string &lang = "eng", ImgMode mode = ImgMode::document) {
+            if (!ocrPtr) {
+                serr << WARNING << "Created New Tesseract" << END << '\n';
+                auto ptr = std::make_unique<tesseract::TessBaseAPI>();
+                if (ptr->Init(nullptr, lang.c_str()) != 0) {
+                    throw std::runtime_error("Could not initialize tesseract.");
+                }
+                if (mode == ImgMode::image) {
+                    ptr->SetPageSegMode(tesseract::PSM_AUTO);
+                }
+                ocrPtr = std::move(ptr);
+                TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
+            }
+        }
+        //////  Smart Pointers
+
+        // void init(const std::string &lang = "eng", ImgMode mode = ImgMode::document) {
+        //     if (ocrPtr == nullptr) {
+        //         ocrPtr = new tesseract::TessBaseAPI();
+
+        //         serr << WARNING << "Created New Tesseract" << END << '\n';
+
+        //         TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
+
+        //         if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
+        //             serr << WARNING << "Deleting OCR Ptr" << END << '\n';
+        //             delete ocrPtr;
+        //             ocrPtr = nullptr;
+        //             throw std::runtime_error("Could not initialize "
+        //                                      "tesseract.");
+        //         }
+        //         if (mode == ImgMode::image) { /* Optimized for Complex Images */
+        //             sout << "Image mode set\n";
+        //             ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
+        //         }
+        //     }
+        // }
+
+        // ~TesseractOCR() {
+        //     serr << WARNING << "TesseractOCR Destructor Called on thread " <<
+        //     omp_get_thread_num()
+        //          << END << "\n";
+
+        //     if (ocrPtr != nullptr) {
+        //         serr << WARNING << "Destructor call ocrPtr was not Null" << END << '\n';
+        //         ocrPtr->Clear();
+        //         ocrPtr->End();
+        //         delete ocrPtr;
+        //         ocrPtr = nullptr;
+        //     }
+        // }
+
+        //  auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
     };
 
-    static TesseractOCR thread_local_tesserat;
+    //     static TesseractOCR thread_local_tesserat;
 
-#pragma omp threadprivate(thread_local_tesserat)
+    static std::unique_ptr<TesseractOCR> thread_local_tesserat = nullptr;
+
+    // #pragma omp threadprivate(thread_local_tesserat)
 
     // inline void cleanupOpenMPTesserat() {
     //     serr << "cleanupOpenMPTesserat Called on thread " << omp_get_thread_num() << END << '\n';
@@ -354,6 +405,7 @@ namespace imgstr {
     //     }
     // }
 
+#pragma omp threadprivate(thread_local_tesserat)
     inline void cleanupOpenMPTesserat() {
 #pragma omp parallel
         {
@@ -362,21 +414,16 @@ namespace imgstr {
             serr << WARNING << "Cleanup: Thread Local OCR pointer clearing on thread "
                  << omp_get_thread_num();
 
-            if (thread_local_tesserat.ocrPtr != nullptr) {
-                serr << WARNING << "Cleanup: Thread Local not NullPtr, clearing" << END << '\n';
-                thread_local_tesserat.ocrPtr->End();
-                delete thread_local_tesserat.ocrPtr;
-                thread_local_tesserat.ocrPtr = nullptr;
-                TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-
-                // TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-
-                /* Note: Manually calling Destructor is Bad Practice */
-                // thread_local_tesserat.~TesseractOCR();
-
-                // thread_local_tesserat.ocrPtr = nullptr;
-            }
+            // Reset triggers Destructor for Tesseract
+            thread_local_tesserat.reset();
         }
+    }
+
+    inline auto getThreadLocalTesserat() -> TesseractOCR * {
+        if (thread_local_tesserat == nullptr) {
+            thread_local_tesserat = std::make_unique<TesseractOCR>();
+        }
+        return thread_local_tesserat.get();
     }
 
 #pragma endregion
@@ -721,6 +768,7 @@ namespace imgstr {
               cache(folly::AtomicUnorderedInsertMap<std::string, Image>(capacity)),
               img_mode(ImgMode::document) {
             initLog();
+
             setCores(num_cores); // explicitly set cores
         }
 
@@ -731,8 +779,13 @@ namespace imgstr {
 
         ~ImgProcessor() {
             destructionLog();
-
+            completeAllThreads();
             cleanupOpenMPTesserat();
+        }
+
+        void completeAllThreads() {
+#pragma omp barrier
+            serr << WARNING << " All Threads Completed\n";
         }
 
         auto getImageText(const std::string &file_path,
@@ -749,6 +802,8 @@ namespace imgstr {
         void processImagesDir(const std::string &directory,
                               bool               write_output = false,
                               const std::string &output_path  = "") {
+            llvm::outs() << "Processing Images Dir" << '\n';
+
             auto files = getFilePaths(directory);
             if (!files) {
                 serrfmt(
@@ -767,6 +822,8 @@ namespace imgstr {
 
         void simpleProcessDir(const std::string &directory, const std::string &output_path = "") {
             std::vector<std::string> imageFiles;
+
+            llvm::outs() << "Processing Images Dir" << '\n';
 
             auto files = getFilePaths(directory);
 
@@ -792,7 +849,11 @@ namespace imgstr {
                 }
             }
 
+            llvm::outs() << "Processing Images within DIR, # images : " << imageFiles.size()
+                         << '\n';
+
 #pragma omp parallel for
+
             for (const auto &imagePath: imageFiles) {
                 START_TIMING();
                 auto file_content = readBytesFromFile(imagePath);
@@ -801,6 +862,8 @@ namespace imgstr {
                 writeTextToFile(img_text, out_path.get());
                 END_TIMING("simple: file processed and written ");
             }
+
+            llvm::outs() << "OpenMP Region Completed SimpleDir " << '\n';
         }
 
         void writeTextToFile(const std::string &content, const std::string &output_path) {
@@ -919,16 +982,30 @@ namespace imgstr {
                 switch (cores) {
                     case CORES::single:
                         omp_set_num_threads(1);
+                        llvm::outs() << "CORES Enum : num Threads set " << 1 << '\n';
+                        num_cores = CORES::single;
+
                         break;
                     case CORES::half:
                         omp_set_num_threads(omp_get_num_procs() / 2);
+                        num_cores = CORES::half;
+
+                        llvm::outs()
+                            << "CORES Enum : num Threads set " << omp_get_num_procs() / 2 << '\n';
                         break;
                     case CORES::max:
                         omp_set_num_threads(omp_get_num_procs());
+                        num_cores = CORES::max;
+
+                        llvm::outs()
+                            << "CORES Enum : num Threads set " << omp_get_num_procs() << '\n';
                         break;
                 }
             } else if constexpr (std::is_integral<T>::value) {
                 int numThreads = std::min(static_cast<int>(cores), omp_get_num_procs());
+
+                llvm::outs() << "Integral Setting num Threads OpenMP" << numThreads << '\n';
+
                 omp_set_num_threads(numThreads);
             } else {
                 static_assert(false, "Unsupported type for setCores");
@@ -1106,9 +1183,13 @@ namespace imgstr {
         tesseractInvokeLog(img_mode);
 #endif
 
-        if (thread_local_tesserat.ocrPtr == nullptr) {
-            thread_local_tesserat.init(lang, img_mode);
+        auto *tesseract = getThreadLocalTesserat();
+
+        if (tesseract->ocrPtr == nullptr) {
+            tesseract->init(lang, img_mode);
+            // thread_local_tesserat->init(lang, img_mode);
         }
+
         Pix *image =
             pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
         if (image == nullptr) {
@@ -1116,15 +1197,16 @@ namespace imgstr {
                                      "buffer");
         }
 
-        thread_local_tesserat->SetImage(image);
+        // thread_local_tesserat->SetImage(image);
+        tesseract->ocrPtr->SetImage(image);
 
-        char       *rawText = thread_local_tesserat->GetUTF8Text();
+        char       *rawText = tesseract->ocrPtr->GetUTF8Text();
         std::string outText(rawText);
 
         delete[] rawText;
 
         pixDestroy(&image);
-        thread_local_tesserat->Clear();
+        tesseract->ocrPtr->Clear();
         return outText;
     };
 
@@ -1155,9 +1237,20 @@ namespace imgstr {
     inline auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
                                   const std::string                &lang,
                                   ImgMode                           img_mode) -> std::string {
-        if (thread_local_tesserat.ocrPtr == nullptr) {
-            thread_local_tesserat.init(lang, img_mode);
+        llvm::outs() << "Get Text OCR Checking Active Instance " << '\n';
+
+        auto *tesseract = getThreadLocalTesserat();
+
+        if (tesseract->ocrPtr == nullptr) {
+            tesseract->init(lang, img_mode);
         }
+
+        // if (thread_local_tesserat->ocrPtr == nullptr) {
+
+        //     thread_local_tesserat->init(lang, img_mode);
+        // }
+
+        llvm::outs() << "Tesseract Not nullptr " << '\n';
         Pix *image =
             pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
         if (image == nullptr) {
@@ -1165,9 +1258,10 @@ namespace imgstr {
                                      "buffer");
         }
 
-        thread_local_tesserat->SetImage(image);
+        tesseract->ocrPtr->SetImage(image);
 
-        char       *rawText = thread_local_tesserat->GetUTF8Text();
+        char *rawText = tesseract->ocrPtr->GetUTF8Text();
+
         std::string outText(rawText);
 
         delete[] rawText;
@@ -1178,21 +1272,25 @@ namespace imgstr {
 
     inline auto
         getTextImgFile(const std::string &file_path, const std::string &lang) -> std::string {
-        if (thread_local_tesserat.ocrPtr == nullptr) {
-            thread_local_tesserat.init(lang);
+        auto *tesseract = getThreadLocalTesserat();
+
+        if (tesseract->ocrPtr == nullptr) {
+            tesseract->init(lang);
         }
 
         Pix *image = pixRead(file_path.c_str());
 
-        thread_local_tesserat->SetImage(image);
+        tesseract->ocrPtr->SetImage(image);
 
-        char       *rawText = thread_local_tesserat->GetUTF8Text();
+        char       *rawText = tesseract->ocrPtr->GetUTF8Text();
         std::string outText(rawText);
 
         delete[] rawText;
 
         pixDestroy(&image);
-        thread_local_tesserat->Clear();
+
+        tesseract->ocrPtr->Clear();
+
         return outText;
     }
 

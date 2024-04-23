@@ -82,7 +82,6 @@ if (NOT Leptonica_FOUND)
     pkg_check_modules(Leptonica REQUIRED IMPORTED_TARGET lept)
 endif()
 
-
 # gtest
 include(FetchContent)
 FetchContent_Declare(
@@ -99,7 +98,6 @@ FetchContent_MakeAvailable(googletest)
 
 # Static Library : 1. Define src folder, add lib, set Include Dir for Static Lib
 
-# include_directories(${CMAKE_SOURCE_DIR}/include)  # Make sure the include Headers are included
 file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cc")
 add_library(common_lib ${SRC_FILES})  # Creates a static library by default
 
@@ -129,21 +127,6 @@ target_include_directories(common_lib PUBLIC "${CMAKE_SOURCE_DIR}/include")
 add_executable(main  main.cc)
 target_link_libraries(main PUBLIC common_lib) # link with common_lib
 
-# target_link_libraries(main
-#   PUBLIC GTest::gtest_main
-#   PUBLIC Folly::folly
-#   PUBLIC OpenSSL::Crypto
-#   PUBLIC PkgConfig::Tesseract 
-#   PUBLIC PkgConfig::Leptonica
-# )
-
-# if(OpenMP_CXX_FOUND)
-#     message(STATUS "Using OpenMP")
-#     target_link_libraries(main PUBLIC OpenMP::OpenMP_CXX)
-# else()
-#     message(STATUS "OpenMP not found")
-# endif()
-
 
 if (BENCHMARK)
     add_executable(cache_benchmark benchmarks/cache_benchmark.cc)
@@ -158,9 +141,6 @@ set(TEST_EXECUTABLES)
 
 file(GLOB TEST_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/tests" "tests/*.cc")
 
-# Static Library
-# add_library(tesseract_lib STATIC src/tesseract.cc)
-# target_link_libraries(${TEST_EXECUTABLE} tesseract_lib)  then link this
 
 foreach(TEST_SOURCE IN LISTS TEST_SOURCES)
     get_filename_component(TEST_EXECUTABLE ${TEST_SOURCE} NAME_WE)
@@ -177,13 +157,6 @@ foreach(TEST_SOURCE IN LISTS TEST_SOURCES)
     set_target_properties(${TEST_EXECUTABLE} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     )
-
-    # if(OpenMP_CXX_FOUND)
-    #     message(STATUS "Using OpenMP for ${TEST_EXECUTABLE}")
-    #     target_link_libraries(${TEST_EXECUTABLE} PUBLIC OpenMP::OpenMP_CXX)
-    # else()
-    #     message(STATUS "OpenMP not found for ${TEST_EXECUTABLE}")
-    # endif()
 
     include(GoogleTest)
     gtest_discover_tests(${TEST_EXECUTABLE})
