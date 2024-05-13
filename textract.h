@@ -292,8 +292,6 @@ namespace imgstr {
         TesseractOCR(TesseractOCR &&)                          = delete;
         auto operator=(TesseractOCR &&) -> TesseractOCR      & = delete;
 
-        ////// using Smart Pointers
-
         auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr.get(); }
 
         ~TesseractOCR() {
@@ -337,8 +335,7 @@ namespace imgstr {
             serr << WARNING << "Cleanup: Thread Local OCR pointer clearing on thread "
                  << omp_get_thread_num();
 
-            // Reset triggers Destructor for Tesseract
-            thread_local_tesserat.reset();
+            thread_local_tesserat.reset(); // <smartptr>.reset() invokes Destructor for Tesseract
         }
     }
 
@@ -721,7 +718,7 @@ namespace imgstr {
               img_mode(ImgMode::document) {
             initLog();
 
-            setCores(num_cores); // explicitly set cores
+            setCores(num_cores);
         }
 
         ImgProcessor(const ImgProcessor &)                     = delete;
