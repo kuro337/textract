@@ -1,0 +1,1206 @@
+2024.05.12 16:15:15 INFO  Started: Metals version 1.3.0 in folders '/Users/kuro/Documents/Code/Cpp/image/imgapp' for client Visual Studio Code - Insiders 1.90.0-insider.[0m
+SLF4J: Class path contains multiple SLF4J providers.
+SLF4J: Found provider [scribe.slf4j.ScribeServiceProvider@48154bf7]
+SLF4J: Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@73ba27c2]
+SLF4J: See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual provider is of type [scribe.slf4j.ScribeServiceProvider@48154bf7]
+2024.05.12 16:15:15 WARN  Flyway upgrade recommended: H2 2.2.224 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.220.[0m
+2024.05.12 16:15:15 WARN  no build tool detected in workspace '/Users/kuro/Documents/Code/Cpp/image/imgapp'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. [0m
+2024.05.12 16:15:15 WARN  Build server is not auto-connectable.[0m
+May 12, 2024 5:05:10 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 5:53:49 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:10:25 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:17:40 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 1
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:34:56 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:40:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:43:16 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:46:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 7:55:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 8:44:19 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 12, 2024 9:39:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 12:11:14 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 12:28:25 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 12:34:03 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 12:48:55 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 12:59:05 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 1:27:12 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 1
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 2:33:55 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+
+May 13, 2024 3:32:33 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleNotification
+WARNING: Notification threw an exception: {
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeWatchedFiles",
+  "params": {
+    "changes": [
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googlemock/test/BUILD.bazel",
+        "type": 1
+      },
+      {
+        "uri": "file:///Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/googletest/test/BUILD.bazel",
+        "type": 3
+      }
+    ]
+  }
+}
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:67)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.notify(GenericEndpoint.java:152)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleNotification(RemoteEndpoint.java:220)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:187)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:194)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:94)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:113)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint.lambda$null$0(GenericEndpoint.java:65)
+	... 11 more
+Caused by: java.nio.file.NoSuchFileException: /Users/kuro/Documents/Code/Cpp/image/imgapp/build/_deps/ex-googletest-populate1234/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395/BUILD.bazel
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:106)
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:261)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:379)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:431)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3273)
+	at scala.meta.internal.io.PlatformFileIO$.slurp(PlatformFileIO.scala:45)
+	at scala.meta.internal.io.FileIO$.slurp(FileIO.scala:24)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1(MetalsLspService.scala:1400)
+	at scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$1$adapted(MetalsLspService.scala:1399)
+	at scala.collection.immutable.List.foreach(List.scala:334)
+	at scala.meta.internal.metals.MetalsLspService.onChange(MetalsLspService.scala:1399)
+	at scala.meta.internal.metals.MetalsLspService.didChangeWatchedFiles(MetalsLspService.scala:1341)
+	at scala.meta.internal.metals.WorkspaceLspService.$anonfun$didChangeWatchedFiles$3(WorkspaceLspService.scala:543)
+	at scala.collection.StrictOptimizedIterableOps.map(StrictOptimizedIterableOps.scala:100)
+	at scala.collection.StrictOptimizedIterableOps.map$(StrictOptimizedIterableOps.scala:87)
+	at scala.collection.immutable.HashMap.map(HashMap.scala:39)
+	at scala.meta.internal.metals.WorkspaceLspService.didChangeWatchedFiles(WorkspaceLspService.scala:542)
+	at scala.meta.metals.lsp.DelegatingScalaService.didChangeWatchedFiles(DelegatingScalaService.scala:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 13 more
+

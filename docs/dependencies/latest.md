@@ -10,7 +10,7 @@ apt-cache policy tesseract-ocr
 
 ```
 
-# Tesseract Latest v5.x from Source
+## Tesseract Latest v5.x from Source
 
 ```bash
 git@github.com:tesseract-ocr/tesseract.git

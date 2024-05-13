@@ -10,6 +10,29 @@
 #ifndef CONVERSION_H
 #define CONVERSION_H
 
+/// @brief Generate a PDF from an Image or TexT File and Output to Disk
+/// @param input_path
+/// @param output_path
+/// @param tessdata_path
+/// @param text_only
+void createPDF(const std::string &input_path,
+               const std::string &output_path,
+               const char        *tessdata_path,
+               bool               text_only = false);
+
+/// @brief Perform Text Extraction using Leptonica
+/// @param file_path
+/// @param lang
+/// @return std::string
+auto extractTextFromImageFileLeptonica(const std::string &file_path,
+                                       const std::string &lang = "eng") -> std::string;
+
+/// @brief Perform Text Extraction using the LSTM Algo suited for Fuzzy Matches
+/// @param file_path
+/// @param lang
+/// @return std::string
+auto extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") -> std::string;
+
 /// @brief Convert Image Files to Text and return the Strings
 /// - Accepts Any collection with an Iterator and Types Convertable to a String View
 /// - Compatible with : std::vector<string> or std::array<const char*> , ...
@@ -91,15 +114,5 @@ auto convertImagesToTextTessPerfile(const Container   &files,
     }
     return imageText;
 }
-
-void createPDF(const std::string &input_path,
-               const std::string &output_path,
-               const char        *tessdata_path,
-               bool               text_only = false);
-
-auto extractTextFromImageFileLeptonica(const std::string &file_path,
-                                       const std::string &lang = "eng") -> std::string;
-
-auto extractTextLSTM(const std::string &file_path, const std::string &lang = "eng") -> std::string;
 
 #endif // CONVERSION_H

@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Error.h>
+#include <string>
+#include <util.h>
 
 namespace fs_test_constants {
     constinit auto *const images               = IMAGE_FOLDER_PATH;
@@ -10,9 +12,13 @@ namespace fs_test_constants {
     static constexpr auto tempBasePath         = "baseDirOnly";
     static constexpr auto tempBaseResolvedPath = "basedirWhenFullPath";
     static constexpr auto emptyFolder          = "emptyFolder";
+    static constexpr auto writeTestFile        = "llvm_raw_fd_write_test.txt";
 
 } // namespace fs_test_constants
 using namespace fs_test_constants;
+
+inline auto &sout = llvm::outs();
+inline auto &serr = llvm::errs();
 
 struct NoErr {};
 struct Err {};
@@ -40,15 +46,47 @@ class LLVMFsTests: public ::testing::Test {
     }
 
     static void TearDownTestSuite() {
+        if (deleteFile(writeTestFile)) {
+            FAIL() << "Failed to Cleanup Temp Write File\n";
+        }
+
         if (deleteDirectories(
                 tempDirectory, tempBasePath, tempBaseResolvedPath, tempNonExist, emptyFolder)) {
-            FAIL() << "Failed to Cleanup Temp Dirs" << '\n';
+            FAIL() << "Failed to Cleanup Temp Dirs\n";
         }
     }
 
   public:
     const std::string imgFolder = std::string(images);
 };
+
+TEST_F(LLVMFsTests, WriteFileTest) {
+    const std::string content  = "Testing Raw FD Stream Write!\n";
+    llvm::StringRef   filePath = "llvm_raw_fd_write_test.txt";
+
+    if (auto err = writeStringToFile(filePath, content)) {
+        FAIL() << "Write Failed for Raw FD Stream:" << getErr(std::move(err)) << "\n";
+    }
+    std::string file_content = readFileToString(filePath);
+    ASSERT_EQ(file_content, content);
+}
+
+void throwRuntimeError(const std::string &message) { throw std::runtime_error(message); }
+
+TEST_F(LLVMFsTests, InvalidWriteThrowTest) {
+    llvm::SmallString<128> validFilePath("/path/to/output.txt");
+    llvm::SmallString<128> invalidFilePath("/path/to/output\n.txt");
+
+    const std::string filePath = "reversed_order_args.txt";
+    const std::string testStr  = "abcdefg";
+    const std::string content  = "Passing Content in Place of File Name as Arg\n\n    ";
+
+    ASSERT_FALSE(hasSpecialChars(validFilePath)) << "Expected False hasSpecial(validFilePath)";
+    ASSERT_TRUE(hasSpecialChars(invalidFilePath)) << "Expected True hasSpecial(invalidFilePath)";
+    ASSERT_TRUE(HandleError<StdErr>(writeStringToFile(filePath, content, true)));
+    ASSERT_FALSE(HandleError<StdErr>(writeStringToFile(content, filePath, true)));
+    ASSERT_TRUE(HandleError<StdErr>(deleteFile(filePath)));
+}
 
 TEST_F(LLVMFsTests, GetFilePathsEmpty) {
     auto result = getFilePaths(emptyFolder);

@@ -4,6 +4,8 @@
 #include <textract.h>
 #include <vector>
 
+/* Test Processes and Converts all images in /images
+Stores results in -> /Users/kuro/Documents/Code/Cpp/image/imgapp/build/tests/processed */
 namespace {
     constexpr auto *const imgFolder     = IMAGE_FOLDER_PATH;
     constexpr auto *const inputOpenTest = INPUT_OPEN_TEST_PATH;
@@ -21,7 +23,11 @@ class PublicAPITests: public ::testing::Test {
   protected:
     void SetUp() override {}
 
-    void TearDown() override {}
+    void TearDown() override {
+        if (deleteDirectories(tempDir)) {
+            FAIL() << "Failed to Cleanup Temp Dirs\n";
+        }
+    }
 };
 
 /* All Tests Passed Memory Sanitization ASan */

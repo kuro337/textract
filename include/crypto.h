@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+/// @brief Compute the SHA 256 Hash
+/// @param data
+/// @return std::string
 inline auto computeSHA256(const std::vector<unsigned char> &data) -> std::string {
     EVP_MD_CTX *mdContext = EVP_MD_CTX_new();
     if (mdContext == nullptr) {
@@ -43,6 +46,9 @@ inline auto computeSHA256(const std::vector<unsigned char> &data) -> std::string
     return sha256.str();
 }
 
+/// @brief Compute the SHA 256 Hash - Overload to Map Input Bytes to a vec<uchar> for OpenSSL
+/// @param filePath
+/// @return std::string
 inline auto computeSHA256(const std::string &filePath) -> std::string {
     std::ifstream file(filePath, std::ifstream::binary);
     if (!file) {

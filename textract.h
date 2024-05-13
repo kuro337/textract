@@ -1,35 +1,25 @@
 #ifndef TEXTRACT_H
 #define TEXTRACT_H
 
-#include <algorithm>
 #include <atomic>
-#include <condition_variable>
 #include <folly/AtomicUnorderedMap.h>
 #include <folly/SharedMutex.h>
 #include <fs.h>
 #include <fstream>
-#include <functional>
-#include <iomanip>
+#include <future>
 #include <leptonica/allheaders.h>
-#include <llvm/ADT/StringRef.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Support/FormatVariadic.h>
-#include <llvm/Support/Path.h>
-#include <llvm/Support/raw_ostream.h>
 #include <memory>
 #include <mutex>
 #include <omp.h>
 #include <openssl/evp.h>
 #include <optional>
 #include <queue>
-#include <sstream>
 #include <string>
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
 #include <thread>
 #include <unordered_set>
 #include <util.h>
-#include <utility>
 #include <vector>
 
 namespace imgstr {
@@ -120,8 +110,6 @@ namespace imgstr {
 
     auto deleteFolder(const std::string &path) -> unsigned long;
 
-    void writeToNewFile(const std::string &content, const std::string &output_path);
-
     auto isImageFile(const llvm::StringRef &path) -> bool;
 
     auto getCurrentTimestamp() -> std::string;
@@ -145,8 +133,8 @@ namespace imgstr {
                     const std::string                &lang,
                     ImgMode                           img_mode) -> std::string;
 
-    auto getTextImgFile(const std::string &file_path, const std::string &lang = "eng")
-        -> std::string;
+    auto getTextImgFile(const std::string &file_path,
+                        const std::string &lang = "eng") -> std::string;
 
 #ifndef DATAPATH
     static constexpr auto DATAPATH = "/opt/homebrew/opt/tesseract/share/tessdata";
@@ -295,13 +283,10 @@ namespace imgstr {
     static std::atomic<int> TesseractThreadCount(0);
 
     struct TesseractOCR {
-        //        tesseract::TessBaseAPI *ocrPtr {nullptr};
-
         std::unique_ptr<tesseract::TessBaseAPI> ocrPtr;
 
         TesseractOCR(): ocrPtr(nullptr) {}
 
-        //        TesseractOCR()                                         = default;
         TesseractOCR(const TesseractOCR &)                     = delete;
         auto operator=(const TesseractOCR &) -> TesseractOCR & = delete;
         TesseractOCR(TesseractOCR &&)                          = delete;
@@ -309,15 +294,7 @@ namespace imgstr {
 
         ////// using Smart Pointers
 
-        // Properly returning the raw pointer from the unique_ptr
         auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr.get(); }
-
-        // ~TesseractOCR() {
-        //     if (ocrPtr) {
-        //         ocrPtr->End();
-        //         TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-        //     }
-        // }
 
         ~TesseractOCR() {
             serr << WARNING << "TesseractOCR Destructor Called on thread " << omp_get_thread_num()
@@ -347,63 +324,9 @@ namespace imgstr {
                 TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
             }
         }
-        //////  Smart Pointers
-
-        // void init(const std::string &lang = "eng", ImgMode mode = ImgMode::document) {
-        //     if (ocrPtr == nullptr) {
-        //         ocrPtr = new tesseract::TessBaseAPI();
-
-        //         serr << WARNING << "Created New Tesseract" << END << '\n';
-
-        //         TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
-
-        //         if (ocrPtr->Init(nullptr, lang.c_str()) != 0) {
-        //             serr << WARNING << "Deleting OCR Ptr" << END << '\n';
-        //             delete ocrPtr;
-        //             ocrPtr = nullptr;
-        //             throw std::runtime_error("Could not initialize "
-        //                                      "tesseract.");
-        //         }
-        //         if (mode == ImgMode::image) { /* Optimized for Complex Images */
-        //             sout << "Image mode set\n";
-        //             ocrPtr->SetPageSegMode(tesseract::PSM_AUTO);
-        //         }
-        //     }
-        // }
-
-        // ~TesseractOCR() {
-        //     serr << WARNING << "TesseractOCR Destructor Called on thread " <<
-        //     omp_get_thread_num()
-        //          << END << "\n";
-
-        //     if (ocrPtr != nullptr) {
-        //         serr << WARNING << "Destructor call ocrPtr was not Null" << END << '\n';
-        //         ocrPtr->Clear();
-        //         ocrPtr->End();
-        //         delete ocrPtr;
-        //         ocrPtr = nullptr;
-        //     }
-        // }
-
-        //  auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr; }
     };
 
-    //     static TesseractOCR thread_local_tesserat;
-
     static std::unique_ptr<TesseractOCR> thread_local_tesserat = nullptr;
-
-    // #pragma omp threadprivate(thread_local_tesserat)
-
-    // inline void cleanupOpenMPTesserat() {
-    //     serr << "cleanupOpenMPTesserat Called on thread " << omp_get_thread_num() << END << '\n';
-    //     if (thread_local_tesserat.ocrPtr != nullptr) {
-    //         serr << "Cleanup: Thread Local not NullPtr, clearing" << END << '\n';
-    //         thread_local_tesserat.ocrPtr->End();
-    //         delete thread_local_tesserat.ocrPtr;
-    //         thread_local_tesserat.ocrPtr = nullptr;
-    //         TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-    //     }
-    // }
 
 #pragma omp threadprivate(thread_local_tesserat)
     inline void cleanupOpenMPTesserat() {
@@ -624,64 +547,101 @@ namespace imgstr {
 
         void initLog() {
 #ifdef _DEBUGAPP
-            logger->log() << ERROR << "DEBUG FLAGS ON\n" << END;
+            logger->log() << llvm::formatv("{0}DEBUG FLAGS ON\n{1}", ERROR, END).str();
 #endif
 
-            logger->log() << "Processor Initialized" << '\n'
-                          << "Threads Available: " << BOLD_WHITE << omp_get_max_threads() << END
-                          << "\nCores Available: " << BOLD_WHITE << omp_get_num_procs() << END
-                          << "\nCores Active: " << BOLD_WHITE << omp_get_num_threads() << END
-                          << '\n';
+            logger->log() << llvm::formatv(
+                                 "Processor Initialized\nThreads Available: {0}{1}\nCores "
+                                 "Available: {2}{3}\nCores Active: {4}{5}\n",
+                                 BOLD_WHITE,
+                                 omp_get_max_threads(),
+                                 END,
+                                 BOLD_WHITE,
+                                 omp_get_num_procs(),
+                                 END,
+                                 BOLD_WHITE,
+                                 omp_get_num_threads(),
+                                 END)
+                                 .str();
         }
 
         void printCacheHit(const std::string &file) {
-            logger->log() << '\n'
-                          << SUCCESS_TICK << GREEN << "  Cache Hit : " << END << file << '\n';
+            logger->log() << llvm::formatv(
+                                 "\n{0}{1}  Cache Hit : {2}{3}\n", SUCCESS_TICK, GREEN, END, file)
+                                 .str();
         }
 
         void printFileProcessingFailure(const std::string &file, const std::string &err_msg) {
-            logger->log() << "Failed to Extract Text from Image file: " << file
-                          << ". Error: " << err_msg << '\n';
+            logger->log() << llvm::formatv(
+                                 "Failed to Extract Text from Image file: {0}. Error: {1}\n",
+                                 file,
+                                 err_msg)
+                                 .str();
         }
 
         void printInputFileAlreadyProcessed(const std::string &file) {
-            logger->log() << DELIMITER_STAR << '\n'
-                          << WARNING << "File at path : " << END << file
-                          << "has already been processed to text" << '\n';
+            logger->log() << llvm::formatv("{0}\n{1}File at path : {2}{3}has already been "
+                                           "processed to text\n",
+                                           DELIMITER_STAR,
+                                           WARNING,
+                                           END,
+                                           file)
+                                 .str();
         }
 
         void fileOpenErrorLog(const std::string &output_path) {
-            logger->log() << ERROR << "Error opening file: " << output_path;
+            logger->log() << llvm::formatv("{0}Error opening file: {1}", ERROR, output_path).str();
         }
 
         void overWriteLog(const std::string &output_path) {
-            logger->log() << WARNING_BOLD << "WARNING:  " << END << WARNING
-                          << "File already exists - " << END << BOLD_WHITE << output_path << END
-                          << "    Are you sure you want to overwrite the file?" << '\n';
+            logger->log() << llvm::formatv("{0}WARNING:  {1}{2}File already exists - {3}{4}{5}    "
+                                           "Are you sure you want to overwrite the file?\n",
+                                           WARNING_BOLD,
+                                           END,
+                                           WARNING,
+                                           END,
+                                           BOLD_WHITE,
+                                           output_path,
+                                           END)
+                                 .str();
         }
 
         void filesAlreadyProcessedLog() {
-            logger->log() << BOLD_WHITE << "All files already processed." << END;
+            logger->log()
+                << llvm::formatv("{0}All files already processed.{1}", BOLD_WHITE, END).str();
         }
 
         void printOutputAlreadyWritten(const Image &image) {
-            logger->log() << DELIMITER_STAR << '\n'
-                          << WARNING << image.getName() << " Already Processed and written to "
-                          << END << image.write_info.output_path << " at "
-                          << image.write_info.write_timestamp << '\n';
+            logger->log() << llvm::formatv(
+                                 "{0}\n{1}{2} Already Processed and written to {3}{4} at {5}\n",
+                                 DELIMITER_STAR,
+                                 WARNING,
+                                 image.getName(),
+                                 END,
+                                 image.write_info.output_path,
+                                 image.write_info.write_timestamp)
+                                 .str();
         }
 
         void printProcessingFile(const std::string &file) {
-            logger->log() << BOLD_WHITE << "Processing " << END << BRIGHT_WHITE << file << END
-                          << '\n';
+            logger->log()
+                << llvm::formatv(
+                       "{0}Processing {1}{2}{3}\n", BOLD_WHITE, END, BRIGHT_WHITE, file, END)
+                       .str();
         }
 
         void printProcessingDuration(double duration_ms) {
-            logger->log() << DELIMITER_STAR << '\n'
-                          << BOLD_WHITE << queued.size() << END
-                          << " Files Processed and Converted in " << BRIGHT_WHITE << duration_ms
-                          << " seconds\n"
-                          << END << DELIMITER_STAR << "\n";
+            logger->log() << llvm::formatv("{0}\n{1}{2} Files Processed and Converted in {3}{4} "
+                                           "seconds\n{5}{6}\n",
+                                           DELIMITER_STAR,
+                                           BOLD_WHITE,
+                                           queued.size(),
+                                           END,
+                                           BRIGHT_WHITE,
+                                           duration_ms,
+                                           END,
+                                           DELIMITER_STAR)
+                                 .str();
         }
 
         void printImagesInfo() {
@@ -689,70 +649,62 @@ namespace imgstr {
 
             auto logstream = logger->stream();
 
-            logstream << DELIMITER_STAR << '\n'
-                      << BOLD_WHITE << "textract Processing Results\n\n"
-                      << files.size() << END << " images proccessed\n"
-                      << DELIMITER_STAR << '\n';
+            logstream << llvm::formatv("{0}\n{1}textract Processing Results\n\n{2}{3} images "
+                                       "processed\n{4}\n",
+                                       DELIMITER_STAR,
+                                       BOLD_WHITE,
+                                       files.size(),
+                                       END,
+                                       DELIMITER_STAR)
+                             .str();
 
             for (const auto &img_sha: cache) {
                 const Image &img = img_sha.second;
 
-                sout << llvm::formatv("{0}SHA256:          {1}{2}\n"
-                                      "{3}Path:            {1}{4}\n"
-                                      "{3}Image Size:      {1}{5:N} bytes\n"
-                                      "{3}Text Size:       {1}{6:N} bytes\n"
-                                      "{3}Processed Time:  {1}{7}\n"
-                                      "{3}Output Path:     {1}{8}\n"
-                                      "{3}Output Written:  {1}{9}\n"
-                                      "{3}Write Timestamp: {1}{10}\n"
-                                      "{11}\n",
-                                      Ansi::GREEN_BOLD,
-                                      Ansi::END,
-                                      img.image_sha256,
-                                      Ansi::BLUE,
-                                      img.path,
-                                      img.image_size,
-                                      img.text_size,
-                                      img.time_processed,
-                                      img.write_info.output_path,
-                                      (img.write_info.output_written ? "Yes" : "No"),
-                                      img.write_info.write_timestamp,
-                                      Ansi::DELIMITER_ITEM)
-                            .str();
-
-                logstream << GREEN_BOLD << std::left << std::setw(width) << "SHA256: " << END
-                          << img.image_sha256 << '\n'
-                          << BLUE << std::left << std::setw(width) << "Path: " << END << img.path
-                          << '\n'
-                          << BLUE << std::left << std::setw(width) << "Image Size: " << END
-                          << img.image_size << " bytes\n"
-                          << BLUE << std::left << std::setw(width) << "Text Size: " << END
-                          << img.text_size << " bytes\n"
-                          << BLUE << std::left << std::setw(width) << "Processed Time: " << END
-                          << img.time_processed << '\n'
-                          << BLUE << std::left << std::setw(width) << "Output Path: " << END
-                          << img.write_info.output_path << '\n'
-                          << BLUE << std::left << std::setw(width) << "Output Written: " << END
-                          << (img.write_info.output_written ? "Yes" : "No") << '\n'
-                          << BLUE << std::left << std::setw(width) << "Write Timestamp: " << END
-                          << img.write_info.write_timestamp << '\n'
-                          << DELIMITER_ITEM << '\n';
+                logstream << llvm::formatv("{0}SHA256:          {1}{2}\n"
+                                           "{3}Path:            {1}{4}\n"
+                                           "{3}Image Size:      {1}{5:N} bytes\n"
+                                           "{3}Text Size:       {1}{6:N} bytes\n"
+                                           "{3}Processed Time:  {1}{7}\n"
+                                           "{3}Output Path:     {1}{8}\n"
+                                           "{3}Output Written:  {1}{9}\n"
+                                           "{3}Write Timestamp: {1}{10}\n"
+                                           "{11}\n",
+                                           Ansi::GREEN_BOLD,
+                                           Ansi::END,
+                                           img.image_sha256,
+                                           Ansi::BLUE,
+                                           img.path,
+                                           img.image_size,
+                                           img.text_size,
+                                           img.time_processed,
+                                           img.write_info.output_path,
+                                           (img.write_info.output_written ? "Yes" : "No"),
+                                           img.write_info.write_timestamp,
+                                           Ansi::DELIMITER_ITEM)
+                                 .str();
             }
 
             logstream.flush();
         }
 
         void destructionLog() {
-            logger->log() << LIGHT_GREY << "Destructor called - freeing " << BRIGHT_WHITE
-                          << imgstr::TesseractThreadCount.load(std::memory_order_relaxed) << END
-                          << " Tesseracts\n"
-                          << END << "\nAverage Image Processing Latency: " << BOLD_WHITE
-                          << getAverageProcessingTime() << END << " ms\n"
-                          << '\n'
-                          <<
-
-                BRIGHT_WHITE << "Total Images Processed :: " << BOLD_WHITE << processedImagesCount
-                          << END << '\n';
+            logger->log() << llvm::formatv(
+                                 "{0}Destructor called - freeing {1} {2} Tesseracts.\nAverage "
+                                 "Image Processing Latency: {3} {4} ms.\n\n{5}Total Images "
+                                 "Processed :: {6} {7}\n",
+                                 LIGHT_GREY,
+                                 BRIGHT_WHITE,
+                                 imgstr::TesseractThreadCount.load(std::memory_order_relaxed),
+                                 END,
+                                 BOLD_WHITE,
+                                 getAverageProcessingTime(),
+                                 END,
+                                 BRIGHT_WHITE,
+                                 BOLD_WHITE,
+                                 processedImagesCount,
+                                 END)
+                                 .str();
         }
 
       public:
@@ -788,8 +740,12 @@ namespace imgstr {
             serr << WARNING << " All Threads Completed\n";
         }
 
-        auto getImageText(const std::string &file_path, ISOLang lang = ISOLang::en)
-            -> std::optional<std::string> {
+        /// @brief Get Text from a Single Image File - part of the processing pipeline
+        /// @param file_path
+        /// @param lang = "en"
+        /// @return std::optional<std::string>
+        auto getImageText(const std::string &file_path,
+                          ISOLang            lang = ISOLang::en) -> std::optional<std::string> {
             auto image = processImageFile(file_path);
 
             if (image) {
@@ -799,10 +755,46 @@ namespace imgstr {
             return std::nullopt;
         }
 
+        /// @brief Get Text from a Single Image File - for individual Static Calls
+        /// @param file_path
+        /// @param lang = "en"
+        /// @return std::optional<std::string>
+        auto getTextFromImage(const std::string &imagePath,
+                              ISOLang            lang = ISOLang::en) -> std::string {
+            auto file_content = readBytesFromFile(imagePath);
+            auto img_text     = getTextOCRNoClear(file_content);
+
+            return img_text;
+        }
+
+        /// @brief Convert a Single Image File and Write to an Output File
+        /// @param file_path
+        /// @param lang = "en"
+        /// @return std::optional<std::string>
+        auto processSingleImage(const std::string &imagePath,
+                                const std::string &outputPath,
+                                ISOLang            lang = ISOLang::en) -> llvm::Error {
+            auto futureText = std::async(std::launch::async, [this, &imagePath, &lang] {
+                return getTextFromImage(imagePath, lang);
+            });
+
+            auto out_path = createQualifiedFilePath(imagePath, outputPath, ".txt");
+            auto img_text = futureText.get();
+
+            // HandleError<Throw>(writeStringToFile(img_text, out_path.get()));
+
+            return writeStringToFile(out_path.get(), img_text);
+        }
+
+        /// @brief Process Images Dynamically on a FIFO Basis - Optimized for Bulk Processing
+        /// Workloads with Potential Duplicates
+        /// @param directory
+        /// @param write_output
+        /// @param output_path
         void processImagesDir(const std::string &directory,
                               bool               write_output = false,
                               const std::string &output_path  = "") {
-            llvm::outs() << "Processing Images Dir" << '\n';
+            sout << "Processing Images Dir\n";
 
             auto files = getFilePaths(directory);
             if (!files) {
@@ -820,6 +812,10 @@ namespace imgstr {
             }
         }
 
+        /// @brief Process Images from a Directory in One Batch - ideal for Independent Processing
+        /// as an Isolated Job
+        /// @param directory
+        /// @param output_path
         void simpleProcessDir(const std::string &directory, const std::string &output_path = "") {
             std::vector<std::string> imageFiles;
 
@@ -859,24 +855,11 @@ namespace imgstr {
                 auto file_content = readBytesFromFile(imagePath);
                 auto img_text     = getTextOCRNoClear(file_content);
                 auto out_path     = createQualifiedFilePath(imagePath, output_path, ".txt");
-                writeTextToFile(img_text, out_path.get());
+
+                HandleError<StdErr>(writeStringToFile(out_path.get(), img_text));
+
                 END_TIMING("simple: file processed and written ");
             }
-
-            llvm::outs() << "OpenMP Region Completed SimpleDir " << '\n';
-        }
-
-        void writeTextToFile(const std::string &content, const std::string &output_path) {
-            if (fileExists(output_path)) {
-                overWriteLog(output_path);
-                return;
-            }
-            std::ofstream outFile(output_path);
-            if (!outFile) {
-                fileOpenErrorLog(output_path);
-                return;
-            }
-            outFile << content;
         }
 
         ///   @brief Converts an image file to a text file. If no Directory is passed,
@@ -894,7 +877,7 @@ namespace imgstr {
                                     bool               create_dir  = true,
                                     ISOLang            lang        = ISOLang::en) {
             if (create_dir && !output_path.empty()) {
-                Unwrap<StdErr>(createDirectoryForFile(output_path));
+                Unwrap<StdErr>(createDirectories(output_path));
             }
 
             auto output_file = createQualifiedFilePath(input_file, output_path, ".txt");
@@ -918,11 +901,14 @@ namespace imgstr {
                 return;
             }
 
-            writeTextToFile(image.text_content, output_file.get());
-
-            image.updateWriteInfo(output_file.get(), getCurrentTimestamp(), true);
+            if (HandleError<StdErr>(writeStringToFile(output_file.get(), image.text_content))) {
+                image.updateWriteInfo(output_file.get(), getCurrentTimestamp(), true);
+            }
         }
 
+        /// @brief Process Files with Available Cores Defined during Class Instantiation
+        /// @param output_dir
+        /// @param lang
         void convertImagesToTextFilesParallel(const std::string &output_dir = "",
                                               ISOLang            lang       = ISOLang::en) {
             if (!output_dir.empty() && !fileExists(output_dir) && !createDirectories(output_dir)) {
@@ -1157,18 +1143,6 @@ namespace imgstr {
         return false;
     }
 
-    // static const std::unordered_set<llvm::StringRef> validExtensions = {
-    //     ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif"};
-
-    // inline auto isImageFile(const llvm::StringRef &path) -> bool {
-    //     return validExtensions.contains(path.drop_front(path.find_last_of('.')));
-
-    //     // changed type to StringRef from std::string
-
-    //     //        return validExtensions.find(llvm::sys::path::extension(path).str()) !=
-    //     //              validExtensions.end();
-    // }
-
     inline void tesseractInvokeLog(ImgMode img_mode) {
         serr << ERROR << "getTextOCR "
              << (img_mode == ImgMode::document ? "document mode " : "image mode ") << END
@@ -1198,7 +1172,6 @@ namespace imgstr {
                                      "buffer");
         }
 
-        // thread_local_tesserat->SetImage(image);
         tesseract->ocrPtr->SetImage(image);
 
         char       *rawText = tesseract->ocrPtr->GetUTF8Text();
@@ -1238,20 +1211,12 @@ namespace imgstr {
     inline auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
                                   const std::string                &lang,
                                   ImgMode                           img_mode) -> std::string {
-        llvm::outs() << "Get Text OCR Checking Active Instance " << '\n';
-
         auto *tesseract = getThreadLocalTesserat();
 
         if (tesseract->ocrPtr == nullptr) {
             tesseract->init(lang, img_mode);
         }
 
-        // if (thread_local_tesserat->ocrPtr == nullptr) {
-
-        //     thread_local_tesserat->init(lang, img_mode);
-        // }
-
-        llvm::outs() << "Tesseract Not nullptr " << '\n';
         Pix *image =
             pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
         if (image == nullptr) {
@@ -1401,19 +1366,6 @@ namespace imgstr {
         }
 
         return buffer;
-    }
-
-    inline void writeToNewFile(const std::string &content, const std::string &output_path) {
-        if (fileExists(output_path)) {
-            serr << "Error: File already exists - " << output_path << '\n';
-            return;
-        }
-        std::ofstream outFile(output_path);
-        if (!outFile) {
-            serr << "Error opening file, does not exist : " << output_path << '\n';
-            return;
-        }
-        outFile << content;
     }
 
     inline auto getCurrentTimestamp() -> std::string {

@@ -18,6 +18,11 @@ option(DEBUG_MUTEX "Enable mutex debug logging" OFF)
 option(ENABLE_TIMING "Enable timing functionality" OFF)
 option(BENCHMARK "Build the benchmark tests" OFF)
 
+# Static Linking - enforces Static Linking for all Targets
+# set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# set(BUILD_SHARED_LIBS OFF)
+
+
 macro(enable_options target options)
     foreach(option IN LISTS ${options})
         if(${option})
@@ -130,7 +135,19 @@ endif()
 # ─────────────────────────────────────────────────────────────────
 
 add_executable(main  main.cc)
+
 target_link_libraries(main PUBLIC common_lib) 
+
+
+# Add Static Binary for main.cc as well in /static
+
+add_executable(textract_static main.cc)
+target_link_libraries(textract_static PUBLIC common_lib) 
+set_target_properties(textract_static PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/static")
+# Ensure static linking for textract_static
+set_target_properties(textract_static PROPERTIES LINK_SEARCH_START_STATIC 1)
+set_target_properties(textract_static PROPERTIES LINK_SEARCH_END_STATIC 1)
+
 
 if (BENCHMARK)
     add_executable(cache_benchmark benchmarks/cache_benchmark.cc)
