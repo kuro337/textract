@@ -9,3 +9,4 @@ tests/bulk_test.cc
 CMakebkp.txt
 .vscode
 docs/dependencies/tesseract
+.metals
