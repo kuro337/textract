@@ -5,8 +5,8 @@
 #include <folly/AtomicUnorderedMap.h>
 #include <folly/SharedMutex.h>
 #include <fs.h>
-#include <fstream>
 #include <future>
+#include <iomanip>
 #include <leptonica/allheaders.h>
 #include <memory>
 #include <mutex>
@@ -295,15 +295,16 @@ namespace imgstr {
         auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr.get(); }
 
         ~TesseractOCR() {
-            serr << WARNING << "TesseractOCR Destructor Called on thread " << omp_get_thread_num()
-                 << END << "\n";
+            serrfmt("{1} TesseractOCR Destructor Called on thread {0}{2}\n",
+                    omp_get_thread_num(),
+                    WARNING,
+                    END);
 
             if (ocrPtr != nullptr) {
-                serr << WARNING << "Destructor call ocrPtr was not Null" << END << '\n';
+                serrfmt("{0}Destructor call ocrPtr was not Null{1}\n", WARNING, END);
                 ocrPtr->Clear();
                 ocrPtr->End();
                 TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-                // delete ocrPtr;
                 ocrPtr = nullptr;
             }
         }
@@ -330,10 +331,11 @@ namespace imgstr {
     inline void cleanupOpenMPTesserat() {
 #pragma omp parallel
         {
-            serr << WARNING << "cleanupOpenMPTesserat Called" << END << '\n';
-
-            serr << WARNING << "Cleanup: Thread Local OCR pointer clearing on thread "
-                 << omp_get_thread_num();
+            serrfmt("{1}cleanupOpenMPTesserat Called{2}\n{1}Cleanup: Thread Local OCR pointer "
+                    "clearing on thread {0}{2}",
+                    omp_get_thread_num(),
+                    WARNING,
+                    END);
 
             thread_local_tesserat.reset(); // <smartptr>.reset() invokes Destructor for Tesseract
         }
@@ -348,14 +350,16 @@ namespace imgstr {
 
 #pragma endregion
 
-    /// ImgProcessor : Core Class for Image Processing and Text Extraction
-    /// Provides an efficient, high performance implementation
-    /// of Text Extraction from Images.
-    /// Supports Parallelized Image Processing and maintains an in-memory cache.
-    /// Uses an Atomic Unordered Map for Safe Wait-Free parallel access
-    /// Cache retrieval logic is determined by the SHA256 hash of the Image bytes
-    /// The SHA256 Byte Hash enables duplicate images to not be processed even if
-    /// the file names or paths differ.
+    /*
+     * ImgProcessor : Core Class for Image Processing and Text Extraction
+     * Provides an efficient, high performance implementation
+     * of Text Extraction from Images.
+     * Supports Parallelized Image Processing and maintains an in-memory cache.
+     * Uses an Atomic Unordered Map for Safe Wait-Free parallel access
+     * Cache retrieval logic is determined by the SHA256 hash of the Image bytes
+     * The SHA256 Byte Hash enables duplicate images to not be processed even if
+     * the file names or paths differ.
+     */
 
 #pragma region imgstr_core
 
@@ -544,101 +548,87 @@ namespace imgstr {
 
         void initLog() {
 #ifdef _DEBUGAPP
-            logger->log() << llvm::formatv("{0}DEBUG FLAGS ON\n{1}", ERROR, END).str();
+            logger->log() << fmtstr("{0}DEBUG FLAGS ON\n{1}", ERROR, END);
 #endif
 
-            logger->log() << llvm::formatv(
-                                 "Processor Initialized\nThreads Available: {0}{1}\nCores "
-                                 "Available: {2}{3}\nCores Active: {4}{5}\n",
-                                 BOLD_WHITE,
-                                 omp_get_max_threads(),
-                                 END,
-                                 BOLD_WHITE,
-                                 omp_get_num_procs(),
-                                 END,
-                                 BOLD_WHITE,
-                                 omp_get_num_threads(),
-                                 END)
-                                 .str();
+            logger->log() << fmtstr("Processor Initialized\nThreads Available: {0}{1}\nCores "
+                                    "Available: {2}{3}\nCores Active: {4}{5}\n",
+                                    BOLD_WHITE,
+                                    omp_get_max_threads(),
+                                    END,
+                                    BOLD_WHITE,
+                                    omp_get_num_procs(),
+                                    END,
+                                    BOLD_WHITE,
+                                    omp_get_num_threads(),
+                                    END);
         }
 
         void printCacheHit(const std::string &file) {
-            logger->log() << llvm::formatv(
-                                 "\n{0}{1}  Cache Hit : {2}{3}\n", SUCCESS_TICK, GREEN, END, file)
-                                 .str();
+            logger->log() << fmtstr(
+                "\n{0}{1}  Cache Hit : {2}{3}\n", SUCCESS_TICK, GREEN, END, file);
         }
 
         void printFileProcessingFailure(const std::string &file, const std::string &err_msg) {
-            logger->log() << llvm::formatv(
-                                 "Failed to Extract Text from Image file: {0}. Error: {1}\n",
-                                 file,
-                                 err_msg)
-                                 .str();
+            logger->log() << fmtstr(
+                "Failed to Extract Text from Image file: {0}. Error: {1}\n", file, err_msg);
         }
 
         void printInputFileAlreadyProcessed(const std::string &file) {
-            logger->log() << llvm::formatv("{0}\n{1}File at path : {2}{3}has already been "
-                                           "processed to text\n",
-                                           DELIMITER_STAR,
-                                           WARNING,
-                                           END,
-                                           file)
-                                 .str();
+            logger->log() << fmtstr("{0}\n{1}File at path : {2}{3}has already been "
+                                    "processed to text\n",
+                                    DELIMITER_STAR,
+                                    WARNING,
+                                    END,
+                                    file);
         }
 
         void fileOpenErrorLog(const std::string &output_path) {
-            logger->log() << llvm::formatv("{0}Error opening file: {1}", ERROR, output_path).str();
+            logger->log() << fmtstr("{0}Error opening file: {1}", ERROR, output_path);
         }
 
         void overWriteLog(const std::string &output_path) {
-            logger->log() << llvm::formatv("{0}WARNING:  {1}{2}File already exists - {3}{4}{5}    "
-                                           "Are you sure you want to overwrite the file?\n",
-                                           WARNING_BOLD,
-                                           END,
-                                           WARNING,
-                                           END,
-                                           BOLD_WHITE,
-                                           output_path,
-                                           END)
-                                 .str();
+            logger->log() << fmtstr("{0}WARNING:  {1}{2}File already exists - {3}{4}{5}    "
+                                    "Are you sure you want to overwrite the file?\n",
+                                    WARNING_BOLD,
+                                    END,
+                                    WARNING,
+                                    END,
+                                    BOLD_WHITE,
+                                    output_path,
+                                    END);
         }
 
         void filesAlreadyProcessedLog() {
-            logger->log()
-                << llvm::formatv("{0}All files already processed.{1}", BOLD_WHITE, END).str();
+            logger->log() << fmtstr("{0}All files already processed.{1}", BOLD_WHITE, END);
         }
 
         void printOutputAlreadyWritten(const Image &image) {
-            logger->log() << llvm::formatv(
-                                 "{0}\n{1}{2} Already Processed and written to {3}{4} at {5}\n",
-                                 DELIMITER_STAR,
-                                 WARNING,
-                                 image.getName(),
-                                 END,
-                                 image.write_info.output_path,
-                                 image.write_info.write_timestamp)
-                                 .str();
+            logger->log() << fmtstr("{0}\n{1}{2} Already Processed and written to {3}{4} at {5}\n",
+                                    DELIMITER_STAR,
+                                    WARNING,
+                                    image.getName(),
+                                    END,
+                                    image.write_info.output_path,
+                                    image.write_info.write_timestamp);
         }
 
         void printProcessingFile(const std::string &file) {
-            logger->log()
-                << llvm::formatv(
-                       "{0}Processing {1}{2}{3}\n", BOLD_WHITE, END, BRIGHT_WHITE, file, END)
-                       .str();
+            logger->log() << fmtstr(
+                "{0}Processing {1}{2}{3}\n", BOLD_WHITE, END, BRIGHT_WHITE, file, END);
         }
 
         void printProcessingDuration(double duration_ms) {
-            logger->log() << llvm::formatv("{0}\n{1}{2} Files Processed and Converted in {3}{4} "
-                                           "seconds\n{5}{6}\n",
-                                           DELIMITER_STAR,
-                                           BOLD_WHITE,
-                                           queued.size(),
-                                           END,
-                                           BRIGHT_WHITE,
-                                           duration_ms,
-                                           END,
-                                           DELIMITER_STAR)
-                                 .str();
+            logger->log() << fmtstr("{0}\n{1}{2} Files Processed and Converted in {3}{4} "
+                                    "seconds\n{5}{6}\n",
+                                    DELIMITER_STAR,
+                                    BOLD_WHITE,
+                                    queued.size(),
+                                    END,
+                                    BRIGHT_WHITE,
+                                    duration_ms,
+                                    END,
+                                    DELIMITER_STAR);
         }
 
         void printImagesInfo() {
@@ -646,62 +636,58 @@ namespace imgstr {
 
             auto logstream = logger->stream();
 
-            logstream << llvm::formatv("{0}\n{1}textract Processing Results\n\n{2}{3} images "
-                                       "processed\n{4}\n",
-                                       DELIMITER_STAR,
-                                       BOLD_WHITE,
-                                       files.size(),
-                                       END,
-                                       DELIMITER_STAR)
-                             .str();
+            logstream << fmtstr("{0}\n{1}textract Processing Results\n\n{2}{3} images "
+                                "processed\n{4}\n",
+                                DELIMITER_STAR,
+                                BOLD_WHITE,
+                                files.size(),
+                                END,
+                                DELIMITER_STAR);
 
             for (const auto &img_sha: cache) {
                 const Image &img = img_sha.second;
 
-                logstream << llvm::formatv("{0}SHA256:          {1}{2}\n"
-                                           "{3}Path:            {1}{4}\n"
-                                           "{3}Image Size:      {1}{5:N} bytes\n"
-                                           "{3}Text Size:       {1}{6:N} bytes\n"
-                                           "{3}Processed Time:  {1}{7}\n"
-                                           "{3}Output Path:     {1}{8}\n"
-                                           "{3}Output Written:  {1}{9}\n"
-                                           "{3}Write Timestamp: {1}{10}\n"
-                                           "{11}\n",
-                                           Ansi::GREEN_BOLD,
-                                           Ansi::END,
-                                           img.image_sha256,
-                                           Ansi::BLUE,
-                                           img.path,
-                                           img.image_size,
-                                           img.text_size,
-                                           img.time_processed,
-                                           img.write_info.output_path,
-                                           (img.write_info.output_written ? "Yes" : "No"),
-                                           img.write_info.write_timestamp,
-                                           Ansi::DELIMITER_ITEM)
-                                 .str();
+                logstream << fmtstr("{0}SHA256:          {1}{2}\n"
+                                    "{3}Path:            {1}{4}\n"
+                                    "{3}Image Size:      {1}{5:N} bytes\n"
+                                    "{3}Text Size:       {1}{6:N} bytes\n"
+                                    "{3}Processed Time:  {1}{7}\n"
+                                    "{3}Output Path:     {1}{8}\n"
+                                    "{3}Output Written:  {1}{9}\n"
+                                    "{3}Write Timestamp: {1}{10}\n"
+                                    "{11}\n",
+                                    Ansi::GREEN_BOLD,
+                                    Ansi::END,
+                                    img.image_sha256,
+                                    Ansi::BLUE,
+                                    img.path,
+                                    img.image_size,
+                                    img.text_size,
+                                    img.time_processed,
+                                    img.write_info.output_path,
+                                    (img.write_info.output_written ? "Yes" : "No"),
+                                    img.write_info.write_timestamp,
+                                    Ansi::DELIMITER_ITEM);
             }
 
             logstream.flush();
         }
 
         void destructionLog() {
-            logger->log() << llvm::formatv(
-                                 "{0}Destructor called - freeing {1} {2} Tesseracts.\nAverage "
-                                 "Image Processing Latency: {3} {4} ms.\n\n{5}Total Images "
-                                 "Processed :: {6} {7}\n",
-                                 LIGHT_GREY,
-                                 BRIGHT_WHITE,
-                                 imgstr::TesseractThreadCount.load(std::memory_order_relaxed),
-                                 END,
-                                 BOLD_WHITE,
-                                 getAverageProcessingTime(),
-                                 END,
-                                 BRIGHT_WHITE,
-                                 BOLD_WHITE,
-                                 processedImagesCount,
-                                 END)
-                                 .str();
+            logger->log() << fmtstr("{0}Destructor called - freeing {1} {2} Tesseracts.\nAverage "
+                                    "Image Processing Latency: {3} {4} ms.\n\n{5}Total Images "
+                                    "Processed :: {6} {7}\n",
+                                    LIGHT_GREY,
+                                    BRIGHT_WHITE,
+                                    imgstr::TesseractThreadCount.load(std::memory_order_relaxed),
+                                    END,
+                                    BOLD_WHITE,
+                                    getAverageProcessingTime(),
+                                    END,
+                                    BRIGHT_WHITE,
+                                    BOLD_WHITE,
+                                    processedImagesCount,
+                                    END);
         }
 
       public:
@@ -1096,20 +1082,27 @@ namespace imgstr {
 
         EVP_MD_CTX_free(mdContext);
 
-        std::stringstream sha256;
+        std::string              result;
+        llvm::raw_string_ostream rso(result);
         for (unsigned int i = 0; i < lengthOfHash; ++i) {
-            sha256 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+            rso << llvm::format_hex_no_prefix(hash[i], 2);
         }
-        return sha256.str();
+        return rso.str();
+
+        // std::stringstream sha256;
+        // for (unsigned int i = 0; i < lengthOfHash; ++i) {
+        //     sha256 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+        // }
+        //        return sha256.str();
     }
 
     inline auto computeSHA256(const std::string &filePath) -> std::string {
-        std::ifstream file(filePath, std::ifstream::binary);
-        if (!file) {
-            throw std::runtime_error("Could not open file: " + filePath);
+        auto fileContentOrErr = readFileUChar(filePath);
+        if (!fileContentOrErr) {
+            llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
+            return "";
         }
-        std::vector<unsigned char> data(std::istreambuf_iterator<char>(file), {});
-        return computeSHA256(data);
+        return computeSHA256(fileContentOrErr.get());
     }
 
 #pragma endregion
@@ -1146,11 +1139,11 @@ namespace imgstr {
              << " -> called from thread: " << omp_get_thread_num() << '\n';
     }
 
+    /* Leptonica reads 40% + faster than OpenCV */
+
     inline auto getTextOCR(const std::vector<unsigned char> &file_content,
                            const std::string                &lang,
                            ImgMode img_mode = ImgMode::document) -> std::string {
-        /* Leptonica reads 40% or more faster than OpenCV */
-
 #ifdef _DEBUGAPP
         tesseractInvokeLog(img_mode);
 #endif
@@ -1159,7 +1152,6 @@ namespace imgstr {
 
         if (tesseract->ocrPtr == nullptr) {
             tesseract->init(lang, img_mode);
-            // thread_local_tesserat->init(lang, img_mode);
         }
 
         Pix *image =
@@ -1348,21 +1340,12 @@ namespace imgstr {
 #ifdef _DEBUGFILEIO
         sout << "Converting to char* " << filename << std::endl;
 #endif
-
-        std::ifstream file(filename, std::ios::binary | std::ios::ate);
-        if (!file) {
-            throw std::runtime_error("Failed to open file: " + filename);
-        }
-
-        std::streamsize size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::vector<unsigned char> buffer(size);
-        if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
+        auto fileContentOrErr = readFileUChar(filename);
+        if (!fileContentOrErr) {
+            llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
             throw std::runtime_error("Failed to read file: " + filename);
         }
-
-        return buffer;
+        return fileContentOrErr.get();
     }
 
     inline auto getCurrentTimestamp() -> std::string {

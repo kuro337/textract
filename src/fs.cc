@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "crypto.h"
 #include "util.h"
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
@@ -98,6 +99,22 @@ auto readFileToString(const llvm::Twine &path) -> std::string {
     llvm::StringRef     fileContent = buffer.getBuffer();
 
     return fileContent.str();
+}
+
+/// @brief Read File Contents as a vector<unsigned char>
+/// @param filePath
+/// @return std::vector<unsigned char>
+auto readFileUChar(const llvm::Twine &filePath) -> llvm::Expected<std::vector<unsigned char>> {
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> bufferOrErr =
+        llvm::MemoryBuffer::getFile(filePath);
+
+    if (std::error_code ERR = bufferOrErr.getError()) {
+        return llvm::make_error<llvm::StringError>(ERR.message(), ERR);
+    }
+
+    llvm::MemoryBuffer &buffer      = *bufferOrErr.get();
+    llvm::StringRef     fileContent = buffer.getBuffer();
+    return std::vector<unsigned char>(fileContent.bytes_begin(), fileContent.bytes_end());
 }
 
 /// @brief Stat File Info

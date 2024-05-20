@@ -45,6 +45,11 @@ auto writeStringToFile(const llvm::StringRef &filePath,
 /// @endcode
 auto readFileToString(const llvm::Twine &path) -> std::string;
 
+/// @brief Read File Contents as a vector<unsigned char>
+/// @param filePath
+/// @return std::vector<unsigned char>
+auto readFileUChar(const llvm::Twine &filePath) -> llvm::Expected<std::vector<unsigned char>>;
+
 /// @brief Get the File Paths from a Dir and Validate the Input Path
 /// @param directoryPath
 /// @return llvm::Expected<std::vector<std::string>>

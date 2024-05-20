@@ -2,10 +2,8 @@
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
-#include <fstream>
-#include <iomanip>
+#include "fs.h"
 #include <openssl/evp.h>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -39,23 +37,25 @@ inline auto computeSHA256(const std::vector<unsigned char> &data) -> std::string
 
     EVP_MD_CTX_free(mdContext);
 
-    std::stringstream sha256;
+    std::string result;
+
+    llvm::raw_string_ostream rso(result);
     for (unsigned int i = 0; i < lengthOfHash; ++i) {
-        sha256 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+        rso << llvm::format_hex_no_prefix(hash[i], 2);
     }
-    return sha256.str();
+    return rso.str();
 }
 
 /// @brief Compute the SHA 256 Hash - Overload to Map Input Bytes to a vec<uchar> for OpenSSL
 /// @param filePath
 /// @return std::string
 inline auto computeSHA256(const std::string &filePath) -> std::string {
-    std::ifstream file(filePath, std::ifstream::binary);
-    if (!file) {
-        throw std::runtime_error("Could not open file: " + filePath);
+    auto fileContentOrErr = readFileUChar(filePath);
+    if (!fileContentOrErr) {
+        llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
+        return "";
     }
-    std::vector<unsigned char> data(std::istreambuf_iterator<char>(file), {});
-    return computeSHA256(data);
+    return computeSHA256(fileContentOrErr.get());
 }
 
 #endif // CRYPTO_H

@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include <filesystem>
 #include <fs.h>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <gtest/internal/gtest-port.h>
 #include <iostream>

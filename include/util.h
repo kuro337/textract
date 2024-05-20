@@ -70,6 +70,11 @@ inline void soutfmt(const char *message, Args &&...args) {
     llvm::outs() << llvm::formatv(message, std::forward<Args>(args)...) << "\n";
 }
 
+template <typename... Args>
+inline auto fmtstr(const char *message, Args &&...args) -> std::string {
+    return llvm::formatv(message, std::forward<Args>(args)...).str();
+}
+
 template <logging::LogLevel level, typename Config = DebugFlag, typename... Args>
 constexpr void Debug(const char *message, Args &&...args) {
 #ifdef _DEBUGAPP
