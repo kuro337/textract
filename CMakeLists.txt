@@ -7,6 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(INPUT_OPEN_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/screenshot.png")
 set(IMAGE_FOLDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+
 
 # ─────────────────────────────────────────────────────────────────
 # Macros and Optional Flags
@@ -82,14 +84,7 @@ find_package(OpenSSL REQUIRED)
 find_package(Folly CONFIG REQUIRED)
 find_package(gflags CONFIG REQUIRED)
 find_package(OpenMP)
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest REQUIRED)
 
 if(APPLE)
     set(TESSDATA_PREFIX "/opt/homebrew/opt/tesseract/share/tessdata" CACHE PATH "Path to Tesseract trained data")
@@ -137,7 +132,6 @@ endif()
 add_executable(main  main.cc)
 
 target_link_libraries(main PUBLIC common_lib) 
-
 
 # Add Static Binary for main.cc as well in /static
 

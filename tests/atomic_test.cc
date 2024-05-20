@@ -1,5 +1,3 @@
-
-
 #include <folly/SharedMutex.h>
 #include <iostream>
 
@@ -7,77 +5,75 @@ struct Image {
     struct WriteMetadata {
         std::string output_path;
         std::string write_timestamp;
-        bool output_written = false;
+        bool        output_written = false;
     };
 
-    std::string image_sha256;
-    std::string path;
-    std::size_t image_size{};
-    std::string content_fuzzhash;
-    std::string text_content;
-    std::size_t text_size{};
-    std::string time_processed;
+    std::string   image_sha256;
+    std::string   path;
+    std::size_t   image_size {};
+    std::string   content_fuzzhash;
+    std::string   text_content;
+    std::size_t   text_size {};
+    std::string   time_processed;
     WriteMetadata write_info;
 
     mutable std::unique_ptr<folly::SharedMutex> mutex;
 
-    Image(std::string path) : path(std::move(path)), mutex(nullptr) {}
+    Image(std::string path): path(std::move(path)), mutex(nullptr) {}
 
     // Function to update write metadata
     void updateWriteMetadata(const std::string &output_path,
                              const std::string &write_timestamp,
-                             bool output_written) {
+                             bool               output_written) {
         if (!mutex) {
             mutex = std::make_unique<folly::SharedMutex>();
         }
         std::unique_lock<folly::SharedMutex> writerLock(*mutex);
-        write_info.output_path = output_path;
+        write_info.output_path     = output_path;
         write_info.write_timestamp = write_timestamp;
-        write_info.output_written = output_written;
+        write_info.output_written  = output_written;
     }
 
     // Function to read write metadata
     auto readWriteMetadata() const -> WriteMetadata {
         if (!mutex) {
-            return write_info;   // If mutex is not initialized, no write has
-                                 // occurred
+            return write_info; // If mutex is not initialized, no write has
+                               // occurred
         }
         std::shared_lock<folly::SharedMutex> readerLock(*mutex);
         return write_info;
     }
 
     void logAlreadyWritten() const {
-        std::cout << "Image already written by " << write_info.output_path
-                  << std::endl;
+        std::cout << "Image already written by " << write_info.output_path << std::endl;
     }
 };
 #include <gtest/gtest.h>
 
-class ImageTest : public ::testing::Test {
+class ImageTest: public ::testing::Test {
   protected:
-    Image img{"test_path"};
+    Image img {"test_path"};
 };
 
 TEST_F(ImageTest, MutexNullIfNoWrite) {
-    EXPECT_EQ(img.mutex, nullptr);   // Mutex should be null initially
+    EXPECT_EQ(img.mutex, nullptr); // Mutex should be null initially
 }
 
 TEST_F(ImageTest, MutexLazyInitialization) {
-    EXPECT_EQ(img.mutex, nullptr);   // Mutex should be null initially
+    EXPECT_EQ(img.mutex, nullptr); // Mutex should be null initially
 
     img.updateWriteMetadata("path/to/output", "2024-01-20", true);
 
-    EXPECT_NE(img.mutex, nullptr);   // now mutex exists - not nullptr
+    EXPECT_NE(img.mutex, nullptr); // now mutex exists - not nullptr
 }
 
 // Test for updating write metadata
 TEST_F(ImageTest, UpdateWriteMetadata) {
-    std::string new_output_path = "new_path";
+    std::string new_output_path     = "new_path";
     std::string new_write_timestamp = "2024-01-20";
-    bool new_output_written = true;
+    bool        new_output_written  = true;
 
-    img.updateWriteMetadata(new_output_path, new_write_timestamp,
-                            new_output_written);
+    img.updateWriteMetadata(new_output_path, new_write_timestamp, new_output_written);
 
     auto write_info = img.readWriteMetadata();
     EXPECT_EQ(write_info.output_path, new_output_path);
@@ -96,7 +92,6 @@ TEST_F(ImageTest, ReadWriteMetadataBeforeWrite) {
 }
 
 TEST(ImageConcurrentWriteTest, ConcurrentWriteAttempts) {
-
     Image img("test_path");
 
     // Function to be run by threads
