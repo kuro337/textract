@@ -43,7 +43,7 @@ class ImageProcessingTests: public ::testing::Test {
 
 TEST_F(ImageProcessingTests, EnvironmentTest) {
     std::cout << "Printing Sys Info" << std::endl;
-    EXPECT_NO_THROW(imgstr::printSystemInfo());
+    EXPECT_NO_THROW(printSystemInfo());
 
     std::cout << "Printed Sys Info" << std::endl;
 }
@@ -160,12 +160,12 @@ TEST_F(ImageProcessingTests, CheckForUniqueTextFile) {
 TEST_F(ImageProcessingTests, BasicAssertions) {
     tesseract::TessBaseAPI ocr;
 
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::eng)));
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::hin)));
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::chi)));
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::ger)));
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::fra)));
-    EXPECT_NO_THROW((ocr.Init(nullptr, imgstr::ISOLanguage::esp)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::eng)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::hin)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::chi)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::ger)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::fra)));
+    EXPECT_NO_THROW((ocr.Init(nullptr, ISOLanguage::esp)));
 
     try {
         ocr.Init(nullptr, "nonexistent");
@@ -186,20 +186,20 @@ TEST_F(ImageProcessingTests, BasicAssertions) {
 }
 
 TEST_F(ImageProcessingTests, OEMvsLSTMAnalysis) {
-    auto start = imgstr::getStartTime();
+    auto start = getStartTime();
     auto res1  = extractTextFromImageFileLeptonica(fpaths[1]);
 
     std::cout << res1 << '\n';
 
-    auto time1 = imgstr::getDuration(start);
+    auto time1 = getDuration(start);
     std::cout << "Time Leptonica : " << time1 << '\n';
 
-    auto start2 = imgstr::getStartTime();
+    auto start2 = getStartTime();
     auto res2   = extractTextLSTM(fpaths[1]);
 
     std::cout << res2 << '\n';
 
-    auto time2 = imgstr::getDuration(start);
+    auto time2 = getDuration(start);
     std::cout << "Time LSTM: " << time2 << '\n';
 }
 

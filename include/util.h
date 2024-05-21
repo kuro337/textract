@@ -3,9 +3,16 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include "llvm/Support/Regex.h"
+#include "constants.h"
+#include "logger.h"
+#include <chrono>
+#include <ctime>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Chrono.h>
 #include <llvm/Support/Error.h>
 #include <llvm/Support/FormatVariadic.h>
+#include <llvm/Support/Regex.h>
 #include <llvm/Support/raw_ostream.h>
 #include <unordered_set>
 
@@ -73,6 +80,90 @@ inline void soutfmt(const char *message, Args &&...args) {
 template <typename... Args>
 inline auto fmtstr(const char *message, Args &&...args) -> std::string {
     return llvm::formatv(message, std::forward<Args>(args)...).str();
+}
+
+/// @brief Prints K/V's aligned
+/// @tparam Args
+/// @param args
+/// @code{.cpp}
+///   printKeyValuePairs(
+///     std::make_pair("Total Elements", stats.elementsCount),
+///     std::make_pair("Average Elements", stats.avgBucketSize),
+///     std::make_pair("StdDev", llvm::formatv("{0:f4}", stats.stddev).str()),
+///     std::make_pair("Minimum Bucket Count", stats.minBucketSize),
+///     std::make_pair("Maximum Bucket Count", stats.maxBucketSize),
+///     std::make_pair("Load Factor", llvm::formatv("{0:f4}", 100.42).str()));
+/// @endcode
+template <typename... Args>
+inline void printKeyValuePairs(Args &&...args) {
+    static_assert(sizeof...(args) % 2 == 0, "Arguments should be in key/value pairs");
+
+    llvm::SmallVector<llvm::StringRef, 10> keys;
+    llvm::SmallVector<std::string, 10>     values;
+
+    auto processArgs = [&](const auto &key, const auto &value) {
+        keys.push_back(key);
+        values.push_back(llvm::formatv("{0}", value).str());
+    };
+
+    auto processAllArgs = [&](auto &&...kvPairs) {
+        (processArgs(kvPairs.first, kvPairs.second), ...);
+    };
+
+    processAllArgs(std::forward<Args>(args)...);
+
+    size_t maxKeyLength = 0;
+    for (const auto &key: keys) {
+        if (key.size() > maxKeyLength) {
+            maxKeyLength = key.size();
+        }
+    }
+
+    llvm::SmallString<32> formatString;
+    llvm::raw_svector_ostream(formatString) << "{0,-" << maxKeyLength << "} : {1}\n";
+
+    for (size_t i = 0; i < keys.size(); ++i) {
+        llvm::outs() << llvm::formatv(formatString.c_str(), keys[i], values[i]);
+    }
+}
+
+/// @brief Prints K/V's aligned
+/// @tparam Args
+/// @param kvPairs
+/// @code{.cpp}
+/// void testKV(const DistributionStats &stats) {
+///   printKeyValuePairs(
+///       {{"Total Elements", std::to_string(stats.elementsCount)},
+///        {"Average Elements",
+///         llvm::formatv("{0:f2}", stats.avgBucketSize).str()},
+///        {"Standard Deviation", llvm::formatv("{0:f4}", stats.stddev).str()},
+///        {"Minimum Bucket Count", std::to_string(stats.minBucketSize)},
+///        {"Maximum Bucket Count", std::to_string(stats.maxBucketSize)},
+///        {"Load Factor", llvm::formatv("{0:f4}", stats.loadFactor).str()}});
+/// }
+/// @endcode
+inline void
+    printKeyValuePairsList(std::initializer_list<std::pair<llvm::StringRef, std::string>> kvPairs) {
+    llvm::SmallVector<llvm::StringRef, 10> keys;
+    llvm::SmallVector<std::string, 10>     values;
+
+    for (const auto &kv: kvPairs) {
+        keys.push_back(kv.first);
+        values.push_back(kv.second);
+    }
+
+    size_t maxKeyLength = 0;
+    for (const auto &key: keys) {
+        if (key.size() > maxKeyLength) {
+            maxKeyLength = key.size();
+        }
+    }
+    llvm::SmallString<32> formatString;
+    llvm::raw_svector_ostream(formatString) << "{0,-" << maxKeyLength << "} : {1}\n";
+
+    for (size_t i = 0; i < keys.size(); ++i) {
+        llvm::outs() << llvm::formatv(formatString.c_str(), keys[i], values[i]);
+    }
 }
 
 template <logging::LogLevel level, typename Config = DebugFlag, typename... Args>
@@ -153,10 +244,6 @@ inline auto HandleError(llvm::Error &&error) -> bool {
     return true;
 }
 
-/* Valid Image File Extensions */
-static const std::unordered_set<std::string_view> validExtensions = {
-    "jpg", "jpeg", "png", "bmp", "gif", "tif"};
-
 /// @brief Validate if the File Path ends in a Valid Image Extension
 /// @param path
 /// @return true
@@ -206,5 +293,60 @@ inline auto hasSpecialChars(const llvm::StringRef &str) -> bool {
     llvm::Regex specialCharsRegex("[ \t\n\r\f\v]");
     return specialCharsRegex.match(str);
 }
+
+inline auto getCurrentTimestamp() -> std::string {
+    auto                   now       = std::chrono::system_clock::now();
+    llvm::sys::TimePoint<> timePoint = now;
+
+    llvm::SmallString<32>     timestamp;
+    llvm::raw_svector_ostream sst(timestamp);
+
+    sst << llvm::formatv("{0:%Y-%m-%d %H:%M:%S.%N}", timePoint);
+
+    return timestamp.str().str();
+}
+
+//     inline auto getCurrentTimestamp() -> std::string {
+//         auto now       = std::chrono::system_clock::now();
+//         auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+//         std::stringstream sst;
+//         sst << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+//         return sst.str();
+//     }
+
+#pragma region SYSTEM_IMPL                /* System Environment Util Implementations */
+
+using high_res_clock = std::chrono::high_resolution_clock;
+using time_point     = std::chrono::time_point<high_res_clock>;
+
+inline auto getStartTime() -> time_point { return high_res_clock::now(); }
+
+inline auto getDuration(const time_point &startTime) -> double {
+    auto endTime = high_res_clock::now();
+    return std::chrono::duration<double>(endTime - startTime).count();
+}
+
+inline void printDuration(const time_point &startTime, const std::string &msg) {
+    auto endTime  = high_res_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    llvm::formatv("{0}{1}{2}{3}{4}{5}\n", Ansi::BOLD, Ansi::CYAN, msg, duration.count(), Ansi::END);
+}
+
+inline void printSystemInfo() {
+#ifdef __clang__
+    sout << "Clang version: " << __clang_version__;
+#else
+    sout << "Not using Clang." << std::endl;
+#endif
+
+#ifdef _OPENMP
+    sout << "openmp is enabled.\n";
+#else
+    sout << "OpenMP is not enabled." << std::endl;
+#endif
+};
+
+#pragma endregion
 
 #endif // UTIL_H

@@ -1,96 +1,23 @@
 #ifndef TEXTRACT_H
 #define TEXTRACT_H
 
-#include <atomic>
+#include <constants.h>
+#include <conversion.h>
+#include <crypto.h>
 #include <folly/AtomicUnorderedMap.h>
 #include <folly/SharedMutex.h>
 #include <fs.h>
 #include <future>
-#include <iomanip>
-#include <leptonica/allheaders.h>
-#include <memory>
-#include <mutex>
+#include <ktesseract.h>
+#include <logger.h>
 #include <omp.h>
-#include <openssl/evp.h>
-#include <optional>
-#include <queue>
-#include <string>
-#include <tesseract/baseapi.h>
-#include <tesseract/renderer.h>
-#include <thread>
-#include <unordered_set>
 #include <util.h>
-#include <vector>
 
 namespace imgstr {
 
 #pragma region TEXT_SIMILARITY            /* Text Similarity Declarations */
 
-    auto levenshteinScore(std::string a, std::string b) -> size_t;
-
-#pragma endregion
-
-#pragma region CRYPTOGRAPHY               /* Cryptography Declarations */
-
-    auto computeSHA256(const std::vector<unsigned char> &data) -> std::string;
-
-    auto computeSHA256(const std::string &filePath) -> std::string;
-
-#pragma endregion
-
-#pragma region SYSTEM_UTILS               /* System Environment helpers */
-
-    enum class CORES { single, half, max };
-
-    enum class ISOLang { en, es, fr, hi, zh, de };
-
-    using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
-
-    auto getStartTime() -> TimePoint;
-
-    auto getDuration(const TimePoint &start) -> double;
-
-    void printDuration(const TimePoint &startTime, const std::string &msg = "");
-
-    void printSystemInfo();
-
-    namespace Ansi {
-        static constexpr auto BOLD          = "\x1b[1m";
-        static constexpr auto ITALIC        = "\x1b[3m";
-        static constexpr auto UNDERLINE     = "\x1b[4mT";
-        static constexpr auto BRIGHT_WHITE  = "\x1b[97m";
-        static constexpr auto LIGHT_GREY    = "\x1b[37m";
-        static constexpr auto GREEN         = "\x1b[92m";
-        static constexpr auto BOLD_WHITE    = "\x1b[1m";
-        static constexpr auto CYAN          = "\x1b[96m";
-        static constexpr auto BLUE          = "\x1b[94m";
-        static constexpr auto GREEN_BOLD    = "\x1b[1;32m";
-        static constexpr auto ERROR         = "\x1b[31m";
-        static constexpr auto SUCCESS_TICK  = "\x1b[32m✔\x1b[0m";
-        static constexpr auto FAILURE_CROSS = "\x1b[31m✖\x1b[0m";
-        static constexpr auto WARNING       = "\x1b[93m";
-        static constexpr auto WARNING_BOLD  = "\x1b[1;33m";
-        static constexpr auto END           = "\x1b[0m";
-        static constexpr auto DELIMITER_STAR =
-            "\x1b[90m******************************************************"
-            "\x1b[";
-        static constexpr auto DELIMITER_DIM =
-            "\x1b[90m******************************************************"
-            "\x1b[";
-        static constexpr auto DELIMITER_ITEM =
-            "--------------------------------------------------------------";
-    } // namespace Ansi
-
-    using namespace Ansi;
-
-    namespace ISOLanguage {
-        static constexpr auto eng = "eng";
-        static constexpr auto esp = "spa";
-        static constexpr auto fra = "fra";
-        static constexpr auto ger = "deu";
-        static constexpr auto chi = "chi_sim";
-        static constexpr auto hin = "hin";
-    } // namespace ISOLanguage
+    size_t levenshteinScore(std::string a, std::string b);
 
 #pragma endregion
 
@@ -101,18 +28,6 @@ namespace imgstr {
 #else
     static constexpr char SEPARATOR = '/';
 #endif
-
-    auto fileExists(const std::string &path) -> bool;
-
-    auto readBytesFromFile(const std::string &filename) -> std::vector<unsigned char>;
-
-    auto createFolder(const std::string &path) -> bool;
-
-    auto deleteFolder(const std::string &path) -> unsigned long;
-
-    auto isImageFile(const llvm::StringRef &path) -> bool;
-
-    auto getCurrentTimestamp() -> std::string;
 
 #ifdef ENABLE_TIMING
     static TimePoint startTime;
@@ -127,27 +42,6 @@ namespace imgstr {
 
 #pragma region OPENCV_UTILS               /* OpenCV Declarations */
 
-    enum class ImgMode { document, image };
-
-    auto getTextOCR(const std::vector<unsigned char> &file_content,
-                    const std::string                &lang,
-                    ImgMode                           img_mode) -> std::string;
-
-    auto getTextImgFile(const std::string &file_path,
-                        const std::string &lang = "eng") -> std::string;
-
-#ifndef DATAPATH
-    static constexpr auto DATAPATH = "/opt/homebrew/opt/tesseract/share/tessdata";
-#endif
-
-    void createPDF(const std::string &input_path,
-                   const std::string &output_path,
-                   const char        *datapath = DATAPATH);
-
-    auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
-                           const std::string                &lang = "eng",
-                           ImgMode img_mode = ImgMode::document) -> std::string;
-
 #ifdef _USE_OPENCV
 
     std::string
@@ -160,193 +54,6 @@ namespace imgstr {
 
     std::string extractTextFromImageFile(const std::string &file_path, ISOLang lang);
 #endif
-
-    void cleanupOpenMPTesserat();
-
-    void logThreadUse();
-
-#pragma endregion
-
-    inline auto &sout = llvm::outs();
-    inline auto &serr = llvm::errs();
-
-#pragma region ASYNC_LOGGER      /* Non Blocking Asynchronous Logger with ANSI Escaping */
-
-    class AsyncLogger {
-      public:
-        AsyncLogger(): exit_flag(false) {
-            worker_thread = std::thread(&AsyncLogger::processEntries, this);
-        }
-
-        AsyncLogger(const AsyncLogger &)                     = delete;
-        AsyncLogger(AsyncLogger &&)                          = delete;
-        auto operator=(const AsyncLogger &) -> AsyncLogger & = delete;
-        auto operator=(AsyncLogger &&) -> AsyncLogger      & = delete;
-
-        ~AsyncLogger() {
-            exit_flag.store(true);
-            cv.notify_one();
-            worker_thread.join();
-        }
-
-        class LogStream {
-          public:
-            LogStream(AsyncLogger &logger, bool immediateFlush = true)
-                : logger(logger),
-                  immediateFlush(immediateFlush) {}
-
-            ~LogStream() {
-                if (!error) {
-                    try {
-                        logger.log(stream.str());
-                    } catch (const std::exception &e) {
-                        serr << "Exception thrown during Logging: " << e.what() << '\n';
-                    } catch (...) {
-                        serr << "Logging failed during stream destruction.\n";
-                    }
-                }
-            }
-
-            LogStream(const LogStream &)                     = delete;
-            LogStream(LogStream &&)                          = delete;
-            auto operator=(const LogStream &) -> LogStream & = delete;
-            auto operator=(LogStream &&) -> LogStream      & = delete;
-
-            template <typename T>
-            auto operator<<(const T &msg) -> LogStream & {
-                stream << msg;
-                return *this;
-            }
-
-            void flush() {
-                if (!immediateFlush && !error) {
-                    try {
-                        logger.log(stream.str());
-                        stream.str("");
-                        stream.clear();
-                    } catch (const std::exception &e) {
-                        serr << "Exception thrown during flush: " << e.what() << '\n';
-                    } catch (...) {
-                        serr << "Failed to flush logs.\n";
-                        error = true;
-                    }
-                }
-            }
-
-          private:
-            AsyncLogger       &logger;
-            std::ostringstream stream;
-            bool               immediateFlush;
-            bool               error {};
-        };
-
-        auto log() -> LogStream { return (*this); }
-
-        auto stream() -> LogStream { return {*this, false}; }
-
-      private:
-        std::thread             worker_thread;
-        std::mutex              queue_mutex;
-        std::condition_variable cv;
-        std::queue<std::string> log_queue;
-        std::atomic<bool>       exit_flag;
-
-        void log(const std::string &message) {
-            std::lock_guard<std::mutex> lock(queue_mutex);
-            log_queue.push(message);
-            cv.notify_one();
-        }
-
-        void processEntries() {
-            std::unique_lock<std::mutex> lock(queue_mutex, std::defer_lock);
-            while (true) {
-                lock.lock();
-                cv.wait(lock, [this] {
-                    return !log_queue.empty() || exit_flag.load();
-                });
-                while (!log_queue.empty()) {
-                    sout << log_queue.front();
-                    log_queue.pop();
-                }
-                if (exit_flag.load()) {
-                    break;
-                }
-                lock.unlock();
-            }
-        }
-    };
-
-#pragma endregion
-
-#pragma region TESSERACT_OPENMP          /* Tesseract Implementation for Thread Local Tesseracts'  */
-
-    static std::atomic<int> TesseractThreadCount(0);
-
-    struct TesseractOCR {
-        std::unique_ptr<tesseract::TessBaseAPI> ocrPtr;
-
-        TesseractOCR(): ocrPtr(nullptr) {}
-
-        TesseractOCR(const TesseractOCR &)                     = delete;
-        auto operator=(const TesseractOCR &) -> TesseractOCR & = delete;
-        TesseractOCR(TesseractOCR &&)                          = delete;
-        auto operator=(TesseractOCR &&) -> TesseractOCR      & = delete;
-
-        auto operator->() const -> tesseract::TessBaseAPI * { return ocrPtr.get(); }
-
-        ~TesseractOCR() {
-            serrfmt("{1} TesseractOCR Destructor Called on thread {0}{2}\n",
-                    omp_get_thread_num(),
-                    WARNING,
-                    END);
-
-            if (ocrPtr != nullptr) {
-                serrfmt("{0}Destructor call ocrPtr was not Null{1}\n", WARNING, END);
-                ocrPtr->Clear();
-                ocrPtr->End();
-                TesseractThreadCount.fetch_sub(1, std::memory_order_relaxed);
-                ocrPtr = nullptr;
-            }
-        }
-
-        void init(const std::string &lang = "eng", ImgMode mode = ImgMode::document) {
-            if (!ocrPtr) {
-                serr << WARNING << "Created New Tesseract" << END << '\n';
-                auto ptr = std::make_unique<tesseract::TessBaseAPI>();
-                if (ptr->Init(nullptr, lang.c_str()) != 0) {
-                    throw std::runtime_error("Could not initialize tesseract.");
-                }
-                if (mode == ImgMode::image) {
-                    ptr->SetPageSegMode(tesseract::PSM_AUTO);
-                }
-                ocrPtr = std::move(ptr);
-                TesseractThreadCount.fetch_add(1, std::memory_order_relaxed);
-            }
-        }
-    };
-
-    static std::unique_ptr<TesseractOCR> thread_local_tesserat = nullptr;
-
-#pragma omp threadprivate(thread_local_tesserat)
-    inline void cleanupOpenMPTesserat() {
-#pragma omp parallel
-        {
-            serrfmt("{1}cleanupOpenMPTesserat Called{2}\n{1}Cleanup: Thread Local OCR pointer "
-                    "clearing on thread {0}{2}",
-                    omp_get_thread_num(),
-                    WARNING,
-                    END);
-
-            thread_local_tesserat.reset(); // <smartptr>.reset() invokes Destructor for Tesseract
-        }
-    }
-
-    inline auto getThreadLocalTesserat() -> TesseractOCR * {
-        if (thread_local_tesserat == nullptr) {
-            thread_local_tesserat = std::make_unique<TesseractOCR>();
-        }
-        return thread_local_tesserat.get();
-    }
 
 #pragma endregion
 
@@ -363,6 +70,7 @@ namespace imgstr {
 
 #pragma region imgstr_core
 
+    using namespace Ansi;
     struct WriteMetadata {
         std::string output_path;
         std::string write_timestamp;
@@ -396,7 +104,8 @@ namespace imgstr {
 
         void updateWriteInfo(const std::string &output_path,
                              const std::string &write_timestamp,
-                             bool               output_written) const {
+
+                             bool output_written) const {
             if (!mutex) {
                 mutex = std::make_unique<folly::SharedMutex>();
             }
@@ -406,7 +115,7 @@ namespace imgstr {
             write_info.output_written  = output_written;
         }
 
-        auto readWriteInfoSafe() const -> WriteMetadata {
+        WriteMetadata readWriteInfoSafe() const {
             if (!mutex) {
                 return write_info;
             }
@@ -414,7 +123,7 @@ namespace imgstr {
             return write_info;
         }
 
-        auto getName() const -> std::string {
+        std::string getName() const {
             auto lastSlash = path.find_last_of("/\\");
             if (lastSlash != std::string::npos) {
                 return path.substr(lastSlash + 1);
@@ -450,8 +159,9 @@ namespace imgstr {
          * @return std::optional<std::reference_wrapper<const Image>>
 
          */
-        auto processImageFile(const std::string &file)
-            -> std::optional<std::reference_wrapper<const Image>> {
+
+        std::optional<std::reference_wrapper<const Image>>
+            processImageFile(const std::string &file) {
 #ifdef _DEBUGAPP
             logger->log() << LIGHT_GREY << "processImageFile() for " << END << file;
 #endif
@@ -504,7 +214,7 @@ namespace imgstr {
             return std::nullopt;
         }
 
-        auto processCurrentFiles() -> std::vector<std::string> {
+        std::vector<std::string> processCurrentFiles() {
             if (files.empty()) {
                 logger->log() << "Files are empty";
                 return {};
@@ -542,7 +252,7 @@ namespace imgstr {
                 current, newTime, std::memory_order_relaxed, std::memory_order_relaxed));
         }
 
-        auto getAverageProcessingTime() -> double {
+        double getAverageProcessingTime() {
             return totalProcessingTime.load() / processedImagesCount.load();
         }
 
@@ -679,7 +389,7 @@ namespace imgstr {
                                     "Processed :: {6} {7}\n",
                                     LIGHT_GREY,
                                     BRIGHT_WHITE,
-                                    imgstr::TesseractThreadCount.load(std::memory_order_relaxed),
+                                    TesseractThreadCount.load(std::memory_order_relaxed),
                                     END,
                                     BOLD_WHITE,
                                     getAverageProcessingTime(),
@@ -754,9 +464,9 @@ namespace imgstr {
         /// @param file_path
         /// @param lang = "en"
         /// @return std::optional<std::string>
-        auto processSingleImage(const std::string &imagePath,
-                                const std::string &outputPath,
-                                ISOLang            lang = ISOLang::en) -> llvm::Error {
+        llvm::Error processSingleImage(const std::string &imagePath,
+                                       const std::string &outputPath,
+                                       ISOLang            lang = ISOLang::en) {
             auto futureText = std::async(std::launch::async, [this, &imagePath, &lang] {
                 return getTextFromImage(imagePath, lang);
             });
@@ -894,7 +604,7 @@ namespace imgstr {
         /// @param lang
         void convertImagesToTextFilesParallel(const std::string &output_dir = "",
                                               ISOLang            lang       = ISOLang::en) {
-            if (!output_dir.empty() && !fileExists(output_dir) && !createDirectories(output_dir)) {
+            if (!output_dir.empty() && !file_exists(output_dir) && !createDirectories(output_dir)) {
                 return;
             }
 
@@ -931,9 +641,7 @@ namespace imgstr {
             queued.clear();
         }
 
-        void generatePDF(const std::string &input_path,
-                         const std::string &output_path,
-                         const char        *datapath = DATAPATH) {
+        void generatePDF(const std::string &input_path, const std::string &output_path) {
             try {
                 createPDF(input_path, output_path);
 
@@ -1053,60 +761,6 @@ namespace imgstr {
 
 #pragma endregion
 
-#pragma region CRYPTOGRAPHY_IMPL           /*    OpenSSL4 Cryptography Implementations    */
-
-    inline auto computeSHA256(const std::vector<unsigned char> &data) -> std::string {
-        EVP_MD_CTX *mdContext = EVP_MD_CTX_new();
-        if (mdContext == nullptr) {
-            throw std::runtime_error("Failed to create EVP_MD_CTX");
-        }
-
-        if (EVP_DigestInit_ex(mdContext, EVP_sha256(), nullptr) != 1) {
-            EVP_MD_CTX_free(mdContext);
-            throw std::runtime_error("Failed to initialize EVP Digest");
-        }
-
-        if (EVP_DigestUpdate(mdContext, data.data(), data.size()) != 1) {
-            EVP_MD_CTX_free(mdContext);
-            throw std::runtime_error("Failed to update digest");
-        }
-
-        std::vector<unsigned char> hash(EVP_MD_size(EVP_sha256()));
-
-        unsigned int lengthOfHash = 0;
-
-        if (EVP_DigestFinal_ex(mdContext, hash.data(), &lengthOfHash) != 1) {
-            EVP_MD_CTX_free(mdContext);
-            throw std::runtime_error("Failed to finalize digest");
-        }
-
-        EVP_MD_CTX_free(mdContext);
-
-        std::string              result;
-        llvm::raw_string_ostream rso(result);
-        for (unsigned int i = 0; i < lengthOfHash; ++i) {
-            rso << llvm::format_hex_no_prefix(hash[i], 2);
-        }
-        return rso.str();
-
-        // std::stringstream sha256;
-        // for (unsigned int i = 0; i < lengthOfHash; ++i) {
-        //     sha256 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
-        // }
-        //        return sha256.str();
-    }
-
-    inline auto computeSHA256(const std::string &filePath) -> std::string {
-        auto fileContentOrErr = readFileUChar(filePath);
-        if (!fileContentOrErr) {
-            llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
-            return "";
-        }
-        return computeSHA256(fileContentOrErr.get());
-    }
-
-#pragma endregion
-
 #pragma region OPENMP_UTILS
 
     inline void logThreadUse() {
@@ -1119,134 +773,14 @@ namespace imgstr {
 
 #pragma endregion
 
-#pragma region TESSERACT_OPENMP
-
 #pragma region OPENCV_IMPL                /* OpenCV Image Processing Implementations */
 
-    static const std::unordered_set<std::string_view> validExtensions = {
-        "jpg", "jpeg", "png", "bmp", "gif", "tif"};
-
-    inline auto isImageFile(const llvm::StringRef &path) -> bool {
-        if (auto pos = path.find_last_of('.'); pos != llvm::StringRef::npos) {
-            return validExtensions.contains(path.drop_front(pos + 1).lower());
-        }
-        return false;
-    }
-
     inline void tesseractInvokeLog(ImgMode img_mode) {
-        serr << ERROR << "getTextOCR "
-             << (img_mode == ImgMode::document ? "document mode " : "image mode ") << END
-             << " -> called from thread: " << omp_get_thread_num() << '\n';
-    }
-
-    /* Leptonica reads 40% + faster than OpenCV */
-
-    inline auto getTextOCR(const std::vector<unsigned char> &file_content,
-                           const std::string                &lang,
-                           ImgMode img_mode = ImgMode::document) -> std::string {
-#ifdef _DEBUGAPP
-        tesseractInvokeLog(img_mode);
-#endif
-
-        auto *tesseract = getThreadLocalTesserat();
-
-        if (tesseract->ocrPtr == nullptr) {
-            tesseract->init(lang, img_mode);
-        }
-
-        Pix *image =
-            pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
-        if (image == nullptr) {
-            throw std::runtime_error("Failed to load image from memory "
-                                     "buffer");
-        }
-
-        tesseract->ocrPtr->SetImage(image);
-
-        char       *rawText = tesseract->ocrPtr->GetUTF8Text();
-        std::string outText(rawText);
-
-        delete[] rawText;
-
-        pixDestroy(&image);
-        tesseract->ocrPtr->Clear();
-        return outText;
-    };
-
-    inline void createPDF(const std::string &input_path,
-                          const std::string &output_path,
-                          const char        *datapath) {
-        bool textonly = false;
-
-        auto *api = new tesseract::TessBaseAPI();
-        if (api->Init(datapath, "eng") != 0) {
-            fprintf(stderr, "Could not initialize tesseract.\n");
-            delete api;
-            return;
-        }
-
-        auto *renderer = new tesseract::TessPDFRenderer(output_path.c_str(), datapath, textonly);
-
-        bool succeed = api->ProcessPages(input_path.c_str(), nullptr, 0, renderer);
-        if (!succeed) {
-            fprintf(stderr, "Error during processing.\n");
-        }
-
-        api->End();
-        delete api;
-        delete renderer;
-    }
-
-    inline auto getTextOCRNoClear(const std::vector<unsigned char> &file_content,
-                                  const std::string                &lang,
-                                  ImgMode                           img_mode) -> std::string {
-        auto *tesseract = getThreadLocalTesserat();
-
-        if (tesseract->ocrPtr == nullptr) {
-            tesseract->init(lang, img_mode);
-        }
-
-        Pix *image =
-            pixReadMem(static_cast<const l_uint8 *>(file_content.data()), file_content.size());
-        if (image == nullptr) {
-            throw std::runtime_error("Failed to load image from memory "
-                                     "buffer");
-        }
-
-        tesseract->ocrPtr->SetImage(image);
-
-        char *rawText = tesseract->ocrPtr->GetUTF8Text();
-
-        std::string outText(rawText);
-
-        delete[] rawText;
-        pixDestroy(&image);
-
-        return outText;
-    };
-
-    inline auto
-        getTextImgFile(const std::string &file_path, const std::string &lang) -> std::string {
-        auto *tesseract = getThreadLocalTesserat();
-
-        if (tesseract->ocrPtr == nullptr) {
-            tesseract->init(lang);
-        }
-
-        Pix *image = pixRead(file_path.c_str());
-
-        tesseract->ocrPtr->SetImage(image);
-
-        char       *rawText = tesseract->ocrPtr->GetUTF8Text();
-        std::string outText(rawText);
-
-        delete[] rawText;
-
-        pixDestroy(&image);
-
-        tesseract->ocrPtr->Clear();
-
-        return outText;
+        serrfmt("{3}getTextOCR {1}{4} -> called from thread {2}\n",
+                (img_mode == ImgMode::document ? "document mode " : "image mode "),
+                omp_get_thread_num(),
+                ERROR,
+                END);
     }
 
 #ifdef _USE_OPENCV
@@ -1330,68 +864,6 @@ namespace imgstr {
         return extractTextFromImageFile(file_path, langCode);
     }
 #endif
-
-#pragma endregion
-
-//
-#pragma region FILE_IO_IMPL               /* STL File I/O Implementations */
-
-    inline auto readBytesFromFile(const std::string &filename) -> std::vector<unsigned char> {
-#ifdef _DEBUGFILEIO
-        sout << "Converting to char* " << filename << std::endl;
-#endif
-        auto fileContentOrErr = readFileUChar(filename);
-        if (!fileContentOrErr) {
-            llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
-            throw std::runtime_error("Failed to read file: " + filename);
-        }
-        return fileContentOrErr.get();
-    }
-
-    inline auto getCurrentTimestamp() -> std::string {
-        auto now       = std::chrono::system_clock::now();
-        auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-        std::stringstream sst;
-        sst << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
-        return sst.str();
-    }
-
-#pragma endregion
-
-#pragma region SYSTEM_IMPL                /* System Environment Util Implementations */
-
-    auto inline fileExists(const std::string &path) -> bool { return llvm::sys::fs::exists(path); }
-
-    using high_res_clock = std::chrono::high_resolution_clock;
-    using time_point     = std::chrono::time_point<high_res_clock>;
-
-    inline auto getStartTime() -> time_point { return high_res_clock::now(); }
-
-    inline auto getDuration(const time_point &startTime) -> double {
-        auto endTime = high_res_clock::now();
-        return std::chrono::duration<double>(endTime - startTime).count();
-    }
-
-    inline void printDuration(const time_point &startTime, const std::string &msg) {
-        auto endTime  = high_res_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        llvm::formatv("{0}{1}{2}{3}{4}{5}\n", BOLD, CYAN, msg, duration.count(), END);
-    }
-
-    inline void printSystemInfo() {
-#ifdef __clang__
-        sout << "Clang version: " << __clang_version__;
-#else
-        sout << "Not using Clang." << std::endl;
-#endif
-
-#ifdef _OPENMP
-        sout << "openmp is enabled.\n";
-#else
-        sout << "OpenMP is not enabled." << std::endl;
-#endif
-    };
 
 #pragma endregion
 

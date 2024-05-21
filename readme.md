@@ -63,7 +63,7 @@ echo $(brew --prefix llvm)/bin/clang
 
 <br/>
 
-[Linux (AArch64, x86_64) ](docs/linux.md)
+[Linux (AArch64, x86_64)](docs/linux.md)
 
 <br/>
 
@@ -243,6 +243,88 @@ Complex Images to Text Generations: **0.674621 ms**
 Text Document to Searchable PDF Conversion: **0.381223 ms**
 
 <hr>
+
+<br/>
+
+`Latest Test Suite Run`
+
+```bash
+      Start  1: ImageTest.MutexNullIfNoWrite
+ 1/37 Test  #1: ImageTest.MutexNullIfNoWrite ..............................   Passed    0.02 sec
+      Start  2: ImageTest.MutexLazyInitialization
+ 2/37 Test  #2: ImageTest.MutexLazyInitialization .........................   Passed    0.02 sec
+      Start  3: ImageTest.UpdateWriteMetadata
+ 3/37 Test  #3: ImageTest.UpdateWriteMetadata .............................   Passed    0.02 sec
+      Start  4: ImageTest.ReadWriteMetadataBeforeWrite
+ 4/37 Test  #4: ImageTest.ReadWriteMetadataBeforeWrite ....................   Passed    0.02 sec
+      Start  5: ImageConcurrentWriteTest.ConcurrentWriteAttempts
+ 5/37 Test  #5: ImageConcurrentWriteTest.ConcurrentWriteAttempts ..........   Passed    0.02 sec
+      Start  6: ConstTests.BasicAssertions
+ 6/37 Test  #6: ConstTests.BasicAssertions ................................   Passed    0.01 sec
+      Start  7: ConstTests.BasicTest
+ 7/37 Test  #7: ConstTests.BasicTest ......................................   Passed    0.01 sec
+      Start  8: DebugTest.BasicAssertions
+ 8/37 Test  #8: DebugTest.BasicAssertions .................................   Passed    0.01 sec
+      Start  9: LLVMFsTests.WriteFileTest
+ 9/37 Test  #9: LLVMFsTests.WriteFileTest .................................   Passed    0.01 sec
+      Start 10: LLVMFsTests.InvalidWriteThrowTest
+10/37 Test #10: LLVMFsTests.InvalidWriteThrowTest .........................   Passed    0.01 sec
+      Start 11: LLVMFsTests.GetFilePathsEmpty
+11/37 Test #11: LLVMFsTests.GetFilePathsEmpty .............................   Passed    0.01 sec
+      Start 12: LLVMFsTests.GetFilePaths
+12/37 Test #12: LLVMFsTests.GetFilePaths ..................................   Passed    0.01 sec
+      Start 13: LLVMFsTests.GetFileInfo
+13/37 Test #13: LLVMFsTests.GetFileInfo ...................................   Passed    0.01 sec
+      Start 14: LLVMFsTests.DirectoryCreationTests
+14/37 Test #14: LLVMFsTests.DirectoryCreationTests ........................   Passed    0.01 sec
+      Start 15: LLVMFsTests.CreateQualifiedFilePath
+15/37 Test #15: LLVMFsTests.CreateQualifiedFilePath .......................   Passed    0.01 sec
+      Start 16: LLVMFsTests.CreateQualifiedFilePathExistingDirectory
+16/37 Test #16: LLVMFsTests.CreateQualifiedFilePathExistingDirectory ......   Passed    0.01 sec
+      Start 17: LLVMFsTests.CreateQualifiedFilePathNonExistingDirectory
+17/37 Test #17: LLVMFsTests.CreateQualifiedFilePathNonExistingDirectory ...   Passed    0.01 sec
+      Start 18: LLVMFsTests.CreateQualifiedFilePathExtensionChange
+18/37 Test #18: LLVMFsTests.CreateQualifiedFilePathExtensionChange ........   Passed    0.01 sec
+      Start 19: Imgclasstest.BasicAssertions
+19/37 Test #19: Imgclasstest.BasicAssertions ..............................   Passed    0.07 sec
+      Start 20: ImageProcessingTests.EnvironmentTest
+20/37 Test #20: ImageProcessingTests.EnvironmentTest ......................   Passed    0.02 sec
+      Start 21: ImageProcessingTests.ConvertSingleImageToTextFile
+21/37 Test #21: ImageProcessingTests.ConvertSingleImageToTextFile .........   Passed    0.07 sec
+      Start 22: ImageProcessingTests.ConvertSingleImageToTextFileLeak
+22/37 Test #22: ImageProcessingTests.ConvertSingleImageToTextFileLeak .....   Passed    0.07 sec
+      Start 23: ImageProcessingTests.WriteFileTest
+23/37 Test #23: ImageProcessingTests.WriteFileTest ........................   Passed    6.05 sec
+      Start 24: ImageProcessingTests.CheckForUniqueTextFile
+24/37 Test #24: ImageProcessingTests.CheckForUniqueTextFile ...............   Passed    1.23 sec
+      Start 25: ImageProcessingTests.BasicAssertions
+25/37 Test #25: ImageProcessingTests.BasicAssertions ......................   Passed    0.27 sec
+      Start 26: ImageProcessingTests.OEMvsLSTMAnalysis
+26/37 Test #26: ImageProcessingTests.OEMvsLSTMAnalysis ....................   Passed    0.21 sec
+      Start 27: PDFSuite.SinglePDF
+27/37 Test #27: PDFSuite.SinglePDF ........................................   Passed    1.27 sec
+      Start 28: SimilaritySuite.SingleString
+28/37 Test #28: SimilaritySuite.SingleString ..............................   Passed    0.01 sec
+      Start 29: SimilaritySuite.ImageSHA256Equal
+29/37 Test #29: SimilaritySuite.ImageSHA256Equal ..........................   Passed    0.02 sec
+      Start 30: SimilaritySuite.ImageSHA256Unequal
+30/37 Test #30: SimilaritySuite.ImageSHA256Unequal ........................   Passed    0.02 sec
+      Start 31: ParallelPerfTesseract.OEMvsLSTMAnalysisDebug
+31/37 Test #31: ParallelPerfTesseract.OEMvsLSTMAnalysisDebug ..............   Passed    7.16 sec
+      Start 32: PublicAPITests.GetTextFromOneImage
+32/37 Test #32: PublicAPITests.GetTextFromOneImage ........................   Passed    0.08 sec
+      Start 33: PublicAPITests.ProcessSimpleDir
+33/37 Test #33: PublicAPITests.ProcessSimpleDir ...........................   Passed    3.33 sec
+      Start 34: PublicAPITests.ProcessFilesFromDir
+34/37 Test #34: PublicAPITests.ProcessFilesFromDir ........................   Passed    6.03 sec
+      Start 35: PublicAPITests.Results
+35/37 Test #35: PublicAPITests.Results ....................................   Passed    0.02 sec
+      Start 36: PublicAPITests.AddImagesThenConvertToTextDocumentMode
+36/37 Test #36: PublicAPITests.AddImagesThenConvertToTextDocumentMode .....   Passed    6.01 sec
+      Start 37: PublicAPITests.AddImagesThenConvertToTextImageMode
+37/37 Test #37: PublicAPITests.AddImagesThenConvertToTextImageMode ........   Passed    3.50 sec
+
+```
 
 <br/>
 

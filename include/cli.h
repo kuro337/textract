@@ -3,12 +3,11 @@
 #ifndef CLI_H
 #define CLI_H
 
+// #include "textract.h"
+
 #include "textract.h"
 #include <llvm/Support/MemoryBuffer.h>
-#include <llvm/Support/raw_ostream.h>
-
-static inline auto &sout = llvm::outs();
-static inline auto &serr = llvm::errs();
+#include <unistd.h>
 
 /// @brief Read Data from stdin and Close stdin - returns a Stack Allocated String
 /// @return llvm::Expected<llvm::SmallString<256>>

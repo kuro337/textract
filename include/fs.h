@@ -45,6 +45,11 @@ auto writeStringToFile(const llvm::StringRef &filePath,
 /// @endcode
 auto readFileToString(const llvm::Twine &path) -> std::string;
 
+/// @brief Read Uchar bytes from a File
+/// @param filename
+/// @return std::vector<unsigned char>
+std::vector<unsigned char> readBytesFromFile(const std::string &filename);
+
 /// @brief Read File Contents as a vector<unsigned char>
 /// @param filePath
 /// @return std::vector<unsigned char>

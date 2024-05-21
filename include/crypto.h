@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#pragma region CRYPTOGRAPHY_IMPL
+
 /// @brief Compute the SHA 256 Hash
 /// @param data
 /// @return std::string
@@ -57,5 +59,7 @@ inline auto computeSHA256(const std::string &filePath) -> std::string {
     }
     return computeSHA256(fileContentOrErr.get());
 }
+
+#pragma endregion
 
 #endif // CRYPTO_H

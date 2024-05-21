@@ -14,6 +14,30 @@
 static inline auto &sout = llvm::outs();
 static inline auto &serr = llvm::errs();
 
+#pragma region SYSTEM_UTILS               /* System Environment helpers */
+
+using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+
+TimePoint getStartTime();
+
+double getDuration(const TimePoint &start);
+
+void printDuration(const TimePoint &startTime, const std::string &msg = "");
+
+void printSystemInfo();
+
+#pragma endregion
+
+/// @brief Non Blocking Asynchronous Logger with ANSI Escaping
+/// Supports Logging Immediately or building a Stream and Flushing Asynchronously
+///
+/// @code{.cpp}
+///     std::unique_ptr<AsyncLogger> logger;
+///     logger->log() << "Files are empty";
+///     auto logstream = logger->stream();
+///     logstream << "streaming text" ...
+///     logstream.flush()
+/// @endcode
 class AsyncLogger {
   public:
     AsyncLogger(): exit_flag(false) {

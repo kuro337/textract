@@ -20,6 +20,8 @@ void createPDF(const std::string &input_path,
                const char        *tessdata_path,
                bool               text_only = false);
 
+void createPDF(const std::string &input_path, const std::string &output_path);
+
 /// @brief Perform Text Extraction using Leptonica
 /// @param file_path
 /// @param lang

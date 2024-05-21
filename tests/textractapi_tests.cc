@@ -114,7 +114,7 @@ TEST_F(PublicAPITests, AddImagesThenConvertToTextDocumentMode) {
 };
 
 TEST_F(PublicAPITests, AddImagesThenConvertToTextImageMode) {
-    app->setImageMode(imgstr::ImgMode::image);
+    app->setImageMode(ImgMode::image);
 
     app->addFiles(fpaths);
 

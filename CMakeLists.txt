@@ -9,7 +9,6 @@ set(INPUT_OPEN_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/screenshot.png")
 set(IMAGE_FOLDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
-
 # ─────────────────────────────────────────────────────────────────
 # Macros and Optional Flags
 # ─────────────────────────────────────────────────────────────────
@@ -23,7 +22,6 @@ option(BENCHMARK "Build the benchmark tests" OFF)
 # Static Linking - enforces Static Linking for all Targets
 # set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 # set(BUILD_SHARED_LIBS OFF)
-
 
 macro(enable_options target options)
     foreach(option IN LISTS ${options})
@@ -72,6 +70,40 @@ endif()
 if(ENABLE_TIMING)
     add_compile_definitions(ENABLE_TIMING)
 endif()
+
+
+# ─────────────────────────────────────────────────────────────────
+# PGO Instrumentation Builds 
+# ─────────────────────────────────────────────────────────────────
+
+if(PROFILE_GENERATE) # PGO instrumentation build | cmbc -DCMAKE_BUILD_TYPE=All  -DPROFILE_GENERATE=ON 
+    set(PGO_GENERATE_FLAGS "-fprofile-instr-generate -fcoverage-mapping")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PGO_GENERATE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PGO_GENERATE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PGO_GENERATE_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PGO_GENERATE_FLAGS}")
+endif()
+
+
+if(PROFILE_USE) # PGO optimized build cmbc -DCMAKE_BUILD_TYPE=All  -DPROFILE_USE=ON 
+    message(STATUS "PROFILE_USE is enabled")
+    set(MERGED_PROFDATA "${CMAKE_BINARY_DIR}/merged.profdata")
+    if(EXISTS "${MERGED_PROFDATA}")
+        message(STATUS "Found merged.profdata in build directory")
+        set(PGO_USE_FLAGS "-fprofile-instr-use=${MERGED_PROFDATA}")
+    elseif(DEFINED PROF_DATA_PATH AND EXISTS "${PROF_DATA_PATH}")
+        message(STATUS "Found merged.profdata in PROF_DATA_PATH: ${PROF_DATA_PATH}")
+        set(PGO_USE_FLAGS "-fprofile-instr-use=${PROF_DATA_PATH}")
+    else()
+        message(FATAL_ERROR "merged.profdata not found in build directory or PROF_DATA_PATH. Please provide a valid profile data file.")
+    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PGO_USE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PGO_USE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PGO_USE_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PGO_USE_FLAGS}")
+endif()
+
+
 
 # ─────────────────────────────────────────────────────────────────
 # Dependencies
@@ -191,5 +223,4 @@ include_directories(${CMAKE_BINARY_DIR}/include)
 
 
 message(STATUS "Codegen Generated fileNames array<const char*> : #include <generated_files.h>")
-
 message(STATUS "Build Successful.\nInvoke all tests:\n ctest")

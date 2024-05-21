@@ -9,6 +9,7 @@
 #include <tesseract/renderer.h>
 #include <unistd.h>
 
+/// @brief Get the current Location and Print
 void cwd() {
     std::array<char, 1024> cwd {};
     if (getcwd(cwd.data(), cwd.size()) != nullptr) {
@@ -17,12 +18,17 @@ void cwd() {
         std::cerr << "getcwd() error" << std::endl;
     }
 }
+
+/// @brief Generate a PDF from an Input File
+/// @param input_path
+/// @param output_path
+/// @param tessdata_path
+/// @param text_only
 void createPDF(const std::string &input_path,
                const std::string &output_path,
                const char        *tessdata_path,
-               bool               text_only) {
-    // const char *datapath = "/opt/homebrew/opt/tesseract/share/tessdata";
 
+               bool text_only) {
     if (output_path.empty() || output_path == "." || output_path == "./" ||
         output_path.find_first_of(" ") != std::string::npos) {
         llvm::errs() << "Invalid Output Path passed, please pass a valid Absolute Path or File "
@@ -58,8 +64,22 @@ void createPDF(const std::string &input_path,
     delete renderer;
 }
 
-auto extractTextFromImageFileLeptonica(const std::string &file_path, const std::string &lang)
-    -> std::string {
+/// @brief CreatePDF with default tessdata UNIX install Path
+#ifndef DATAPATH
+static constexpr auto DATAPATH = "/opt/homebrew/opt/tesseract/share/tessdata";
+#endif
+void createPDF(const std::string &input_path,
+               const std::string &output_path,
+               const char        *datapath = DATAPATH) {
+    createPDF(input_path, output_path, datapath, false);
+}
+
+/// @brief Perform Text Extraction using Leptonica
+/// @param file_path
+/// @param lang
+/// @return std::string
+auto extractTextFromImageFileLeptonica(const std::string &file_path,
+                                       const std::string &lang) -> std::string {
     auto *api = new tesseract::TessBaseAPI();
     if (api->Init(nullptr, "eng") != 0) {
         fprintf(stderr, "Could not initialize tesseract.\n");
@@ -83,6 +103,10 @@ auto extractTextFromImageFileLeptonica(const std::string &file_path, const std::
     return outText;
 }
 
+/// @brief Perform Text Extraction using the LSTM Algo suited for Fuzzy Matches
+/// @param file_path
+/// @param lang
+/// @return std::string
 auto extractTextLSTM(const std::string &file_path, const std::string &lang) -> std::string {
     auto *api = new tesseract::TessBaseAPI();
     if (api->Init(nullptr, "eng", tesseract::OEM_LSTM_ONLY) != 0) {
@@ -104,19 +128,3 @@ auto extractTextLSTM(const std::string &file_path, const std::string &lang) -> s
     pixDestroy(&image);
     return outText;
 }
-
-/// @brief Convert Image Files to Text and return the Strings
-/// - Accepts Any collection with an Iterator and Types Convertable to a String View
-/// - Compatible with : std::vector<string> or std::array<const char*> , ...
-/// @tparam Container - vector<string> | array<const char*>
-/// @param files
-/// @param lang
-/// @return std::vector<std::string>
-
-/// @brief Convert Image Files to Text and return the Strings
-/// - Accepts Any collection with an Iterator and Types Convertable to a String View
-/// - Compatible with : std::vector<string> or std::array<const char*> , ...
-/// @tparam Container - vector<string> | array<const char*>
-/// @param files
-/// @param lang
-/// @return std::vector<std::string>

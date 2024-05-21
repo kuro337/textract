@@ -17,9 +17,6 @@ namespace fs_test_constants {
 } // namespace fs_test_constants
 using namespace fs_test_constants;
 
-inline auto &sout = llvm::outs();
-inline auto &serr = llvm::errs();
-
 struct NoErr {};
 struct Err {};
 

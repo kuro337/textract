@@ -1,5 +1,4 @@
 #include "fs.h"
-#include "crypto.h"
 #include "util.h"
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
@@ -115,6 +114,18 @@ auto readFileUChar(const llvm::Twine &filePath) -> llvm::Expected<std::vector<un
     llvm::MemoryBuffer &buffer      = *bufferOrErr.get();
     llvm::StringRef     fileContent = buffer.getBuffer();
     return std::vector<unsigned char>(fileContent.bytes_begin(), fileContent.bytes_end());
+}
+
+auto readBytesFromFile(const std::string &filename) -> std::vector<unsigned char> {
+#ifdef _DEBUGFILEIO
+    sout << "Converting to char* " << filename << std::endl;
+#endif
+    auto fileContentOrErr = readFileUChar(filename);
+    if (!fileContentOrErr) {
+        llvm::errs() << "Error: " << llvm::toString(fileContentOrErr.takeError()) << "\n";
+        throw std::runtime_error("Failed to read file: " + filename);
+    }
+    return fileContentOrErr.get();
 }
 
 /// @brief Stat File Info
@@ -245,18 +256,14 @@ auto getLastPathComponent(const llvm::StringRef &path) -> std::string {
 auto appendTimestamp(const std::string &input) -> std::string {
     constexpr int bufsize = 20;
 
-    auto now  = std::chrono::system_clock::now();
-    auto time = std::chrono::system_clock::to_time_t(now);
-
+    auto    now      = std::chrono::system_clock::now();
+    auto    time     = std::chrono::system_clock::to_time_t(now);
     std::tm timestmp = *std::localtime(&time);
 
     std::array<char, bufsize> buffer {};
-
     std::strftime(buffer.data(), buffer.size(), "%Y%m%d_%H%M%S", &timestmp);
-
     std::string timeStr(buffer.data());
 
-    // Format the input string with the timestamp appended
     std::string result = llvm::formatv("{0}_{1}", input, timeStr);
 
     return result;
