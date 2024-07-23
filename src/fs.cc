@@ -292,6 +292,21 @@ auto is_dir(const llvm::Twine &directoryPath) -> bool {
     return llvm::sys::fs::is_directory(directoryPath);
 }
 
+/// @brief -1 NonExistent , 0:File , 1:Dir
+/// @param unknown_path
+/// @return int
+/// @code{.cpp}
+/// @endcode
+int path_stat(const llvm::Twine &unknown_path) {
+    if (!llvm::sys::fs::exists(unknown_path)) {
+        return -1;
+    }
+    if (llvm::sys::fs::is_directory(unknown_path)) {
+        return 1;
+    };
+    return 0;
+}
+
 ///  @brief Get the Err object as a str for llvm::Expected<T>
 ///  @param err
 ///  @return std::string

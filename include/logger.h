@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <constants.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/raw_ostream.h>
 #include <mutex>
@@ -146,5 +147,13 @@ class AsyncLogger {
         }
     }
 };
+
+inline void log_success(const std::string &msg) {
+    llvm::outs() << llvm::formatv("{0} {1}\n", Ansi::SUCCESS_TICK_RGB, msg);
+}
+
+inline void log_failure(const std::string &msg) {
+    llvm::outs() << llvm::formatv("{0} {1}\n", Ansi::FAILURE_CROSS, msg);
+}
 
 #endif // LOGGER_H

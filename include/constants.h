@@ -29,22 +29,25 @@ namespace ISOLanguage {
 } // namespace ISOLanguage
 
 namespace Ansi {
-    static constexpr auto BOLD          = "\x1b[1m";
-    static constexpr auto ITALIC        = "\x1b[3m";
-    static constexpr auto UNDERLINE     = "\x1b[4mT";
-    static constexpr auto BRIGHT_WHITE  = "\x1b[97m";
-    static constexpr auto LIGHT_GREY    = "\x1b[37m";
-    static constexpr auto GREEN         = "\x1b[92m";
-    static constexpr auto BOLD_WHITE    = "\x1b[1m";
-    static constexpr auto CYAN          = "\x1b[96m";
-    static constexpr auto BLUE          = "\x1b[94m";
-    static constexpr auto GREEN_BOLD    = "\x1b[1;32m";
-    static constexpr auto ERROR         = "\x1b[31m";
-    static constexpr auto SUCCESS_TICK  = "\x1b[32m✔\x1b[0m";
-    static constexpr auto FAILURE_CROSS = "\x1b[31m✖\x1b[0m";
-    static constexpr auto WARNING       = "\x1b[93m";
-    static constexpr auto WARNING_BOLD  = "\x1b[1;33m";
-    static constexpr auto END           = "\x1b[0m";
+    static constexpr auto BOLD             = "\x1b[1m";
+    static constexpr auto ITALIC           = "\x1b[3m";
+    static constexpr auto UNDERLINE        = "\x1b[4mT";
+    static constexpr auto BRIGHT_WHITE     = "\x1b[97m";
+    static constexpr auto LIGHT_GREY       = "\x1b[37m";
+    static constexpr auto GREEN            = "\x1b[92m";
+    static constexpr auto RGB_GREEN        = "\x1b[38;2;0;255;0m";
+    static constexpr auto SUCCESS_TICK_RGB = "\x1b[38;2;0;255;0m✔\x1b[0m";
+    static constexpr auto FOLDER_ICON      = "\x1b[33m▸\x1b[0m"; // Alternate yellow folder icon
+    static constexpr auto BOLD_WHITE       = "\x1b[1m";
+    static constexpr auto CYAN             = "\x1b[96m";
+    static constexpr auto BLUE             = "\x1b[94m";
+    static constexpr auto GREEN_BOLD       = "\x1b[1;32m";
+    static constexpr auto ERROR            = "\x1b[31m";
+    static constexpr auto SUCCESS_TICK     = "\x1b[32m✔\x1b[0m";
+    static constexpr auto FAILURE_CROSS    = "\x1b[31m✖\x1b[0m";
+    static constexpr auto WARNING          = "\x1b[93m";
+    static constexpr auto WARNING_BOLD     = "\x1b[1;33m";
+    static constexpr auto END              = "\x1b[0m";
     static constexpr auto DELIMITER_STAR =
         "\x1b[90m******************************************************"
         "\x1b[";

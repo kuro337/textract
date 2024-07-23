@@ -207,17 +207,20 @@ auto Unwrap(llvm::Expected<T> &&expected) -> bool {
             llvm::Error err = expected.takeError();
             throw std::runtime_error(llvm::toString(std::move(err)));
         }
-    } else if constexpr (std::is_same_v<Tag, StdErr>) {
+    }
+    if constexpr (std::is_same_v<Tag, StdErr>) {
         if (!expected) {
             llvm::Error err = expected.takeError();
             llvm::errs() << "Error: " << llvm::toString(std::move(err)) << '\n';
             return false;
         }
-    } else if constexpr (std::is_same_v<Tag, NoThrow>) {
+    }
+    if constexpr (std::is_same_v<Tag, NoThrow>) {
         if (!expected) {
             return false;
         }
     }
+
     return true;
 }
 
@@ -319,12 +322,26 @@ inline auto getCurrentTimestamp() -> std::string {
 
 using high_res_clock = std::chrono::high_resolution_clock;
 using time_point     = std::chrono::time_point<high_res_clock>;
+using high_res_clock = std::chrono::high_resolution_clock;
+using time_point     = std::chrono::time_point<high_res_clock>;
+using duration       = std::chrono::duration<double>;
 
+/// @brief Initialize the Start Time
+/// @return time_point
 inline auto getStartTime() -> time_point { return high_res_clock::now(); }
 
+/// @brief Get the Time Elapsed from the Start Time in milliseconds, with
+/// fractional part
+/// @param startTime
+/// @return double - Time in milliseconds with fractions
+/// @code{.cpp}
+///  auto start = getStartTime();
+///  double duration = getDuration(start);
+/// @endcode
 inline auto getDuration(const time_point &startTime) -> double {
     auto endTime = high_res_clock::now();
-    return std::chrono::duration<double>(endTime - startTime).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
+    return elapsed.count() / 1000.0;
 }
 
 inline void printDuration(const time_point &startTime, const std::string &msg) {

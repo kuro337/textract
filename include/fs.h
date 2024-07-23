@@ -17,6 +17,8 @@ auto file_exists(const llvm::Twine &path) -> bool;
 ///  @return bool
 auto is_dir(const llvm::Twine &directoryPath) -> bool;
 
+int path_stat(const llvm::Twine &unknown_path);
+
 /// @brief Write a String to a File using a raw fd stream - failure indicates the Presence of an
 /// Error
 /// @param filePath
