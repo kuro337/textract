@@ -1,5 +1,5 @@
 .cache
-main.cc
+# main.cc
 build
 read.md
 images
@@ -10,3 +10,4 @@ CMakebkp.txt
 .vscode
 docs/dependencies/tesseract
 .metals
+
