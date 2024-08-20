@@ -324,6 +324,7 @@ Text Document to Searchable PDF Conversion: **0.381223 ms**
       Start 37: PublicAPITests.AddImagesThenConvertToTextImageMode
 37/37 Test #37: PublicAPITests.AddImagesThenConvertToTextImageMode ........   Passed    3.50 sec
 
+# Nix Flake 
 ```
 
 <br/>
