@@ -1,11 +1,9 @@
 {
-  description = "Textract: A CMake-based project";
-
+  description = "textract: a cmake-based project";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
-
   outputs =
     {
       self,
@@ -21,7 +19,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             cmake
-            llvm
+            llvmPackages_latest.llvm
             openssl
             tesseract
             leptonica
@@ -37,30 +35,29 @@
             zstd
             libxml2
           ];
-
           shellHook = ''
             export TESSDATA_PREFIX=${pkgs.tesseract}/share/tessdata
           '';
         };
-
-        packages.default = pkgs.stdenv.mkDerivation {
+        packages.default = pkgs.llvmPackages_latest.libcxxStdenv.mkDerivation {
           name = "textract";
           src = ./.;
 
           nativeBuildInputs = with pkgs; [
             cmake
-            llvm
+            llvmPackages_latest.llvm
             pkg-config
           ];
 
           buildInputs = with pkgs; [
+            curl
             openssl
             tesseract
             leptonica
             folly
             gtest
             gflags
-            llvmPackages.openmp
+            llvmPackages_latest.openmp
             fmt
             boost
             double-conversion
@@ -71,28 +68,23 @@
             libxml2
           ];
 
-          cmakeFlags = [
-            "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_CXX_FLAGS=-fopenmp"
-          ];
-
-          NIX_CFLAGS_COMPILE = "-fopenmp";
-          NIX_LDFLAGS = "-L${pkgs.llvmPackages.openmp}/lib -lomp";
+          cmakeFlags = [ "-DCMAKE_CXX_FLAGS=-stdlib=libc++" ];
 
           preConfigure = ''
-            # Ensure all source files are available
-            cp -r $src/* .
+            echo 'Preparing build environment:'
+            ls -R
           '';
-
           buildPhase = ''
-            cmake .
-            make
-          '';
+            echo 'building from:'
+            pwd
+            ls
+            ls -R
+            cmake -DBUILD_TESTING=OFF ..
 
-          installPhase = ''
-            mkdir -p $out/bin
-            cp bin/main $out/bin/textract
+            cmake --build . --verbose
+
           '';
+          doCheck = false;
         };
       }
     );

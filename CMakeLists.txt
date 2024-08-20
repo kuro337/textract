@@ -118,6 +118,10 @@ find_package(gflags CONFIG REQUIRED)
 find_package(OpenMP)
 find_package(GTest REQUIRED)
 
+find_package(CURL REQUIRED)
+
+
+
 if(APPLE)
     set(TESSDATA_PREFIX "/opt/homebrew/opt/tesseract/share/tessdata" CACHE PATH "Path to Tesseract trained data")
 elseif(UNIX AND NOT APPLE)
@@ -148,7 +152,9 @@ target_link_libraries(common_lib
       PUBLIC OpenSSL::SSL
       PUBLIC Folly::folly
       PUBLIC PkgConfig::Tesseract
-      PUBLIC PkgConfig::Leptonica)
+      PUBLIC PkgConfig::Leptonica 
+      PUBLIC CURL::libcurl)  # Add this line
+    
 
 if(OpenMP_CXX_FOUND)
   message(STATUS "Linking OpenMP with Lib")

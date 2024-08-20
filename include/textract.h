@@ -656,39 +656,37 @@ namespace imgstr {
 
         template <typename T>
         void setCores(T cores) {
-            if constexpr (std::is_same<T, CORES>::value) {
+            if constexpr (std::is_same_v<T, CORES>) {
                 switch (cores) {
                     case CORES::single:
                         omp_set_num_threads(1);
                         llvm::outs() << "CORES Enum : num Threads set " << 1 << '\n';
                         num_cores = CORES::single;
-
                         break;
                     case CORES::half:
                         omp_set_num_threads(omp_get_num_procs() / 2);
                         num_cores = CORES::half;
-
                         llvm::outs()
                             << "CORES Enum : num Threads set " << omp_get_num_procs() / 2 << '\n';
                         break;
                     case CORES::max:
                         omp_set_num_threads(omp_get_num_procs());
                         num_cores = CORES::max;
-
                         llvm::outs()
                             << "CORES Enum : num Threads set " << omp_get_num_procs() << '\n';
                         break;
                 }
-            } else if constexpr (std::is_integral<T>::value) {
+            } else if constexpr (std::is_integral_v<T>) {
                 int numThreads = std::min(static_cast<int>(cores), omp_get_num_procs());
-
-                llvm::outs() << "Integral Setting num Threads OpenMP" << numThreads << '\n';
-
+                llvm::outs() << "Integral Setting num Threads OpenMP " << numThreads << '\n';
                 omp_set_num_threads(numThreads);
             } else {
-                static_assert(false, "Unsupported type for setCores");
+                static_assert(always_false<T>, "Unsupported type for setCores");
             }
         }
+
+        template <typename T>
+        inline static constexpr bool always_false = false;
 
         void resetCache(size_t new_capacity) {
             cache = folly::AtomicUnorderedInsertMap<std::string, Image>(new_capacity);

@@ -98,7 +98,7 @@ inline std::string getTextOCR(const std::vector<unsigned char> &file_content,
 
                               ImgMode img_mode = ImgMode::document) {
 #ifdef _DEBUGAPP
-    tesseractInvokeLog(img_mode);
+
 #endif
     auto *tesseract = getThreadLocalTesserat();
 

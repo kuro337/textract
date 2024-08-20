@@ -11,3 +11,4 @@ CMakebkp.txt
 docs/dependencies/tesseract
 .metals
 
+tests/atomic_test.cc
